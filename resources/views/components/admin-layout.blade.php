@@ -1,0 +1,2 @@
+<x-sidebar />
+{{ $slot }}
