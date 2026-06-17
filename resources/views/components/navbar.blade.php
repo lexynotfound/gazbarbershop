@@ -6,27 +6,41 @@
                 <a href="{{ route($route) }}" class="text-sm font-semibold text-gaz-muted transition hover:text-white">{{ $label }}</a>
             @endforeach
             @auth
-                <a href="{{ route('bookings.index') }}" class="text-sm font-semibold text-gaz-muted transition hover:text-white">Booking Saya</a>
+                @if (auth()->user()->role === 'user')
+                    <a href="{{ route('bookings.index') }}" class="text-sm font-semibold text-gaz-muted transition hover:text-white">Booking Saya</a>
+                @endif
             @endauth
         </nav>
         <div class="hidden items-center gap-3 lg:flex">
             @auth
-                <x-secondary-button href="{{ route('dashboard') }}">Dashboard</x-secondary-button>
+                @if (auth()->user()->role === 'admin')
+                    <x-secondary-button href="{{ route('admin.dashboard') }}">Dashboard Admin</x-secondary-button>
+                @else
+                    <x-secondary-button href="{{ route('dashboard') }}">Dashboard</x-secondary-button>
+                    <x-primary-button href="{{ route('booking.create') }}">Booking Sekarang</x-primary-button>
+                @endif
             @else
                 <x-secondary-button href="{{ route('login') }}">Login</x-secondary-button>
+                <x-primary-button href="{{ route('booking.create') }}">Booking Sekarang</x-primary-button>
             @endauth
-            <x-primary-button href="{{ route('booking.create') }}">Booking Sekarang</x-primary-button>
         </div>
-        <button type="button" @click="open = ! open" class="grid size-11 place-items-center rounded-xl border border-gaz-border text-2xl text-white lg:hidden">☰</button>
+        <button type="button" @click="open = ! open" class="grid size-11 place-items-center rounded-xl border border-gaz-border text-2xl text-white lg:hidden">&#9776;</button>
     </div>
     <div x-cloak x-show="open" x-transition class="border-t border-gaz-border bg-gaz-black px-4 pb-4 lg:hidden">
         <div class="grid gap-2">
-            @foreach ([['Beranda', 'home'], ['Layanan', 'services'], ['Capster', 'capsters'], ['Booking Sekarang', 'booking.create']] as [$label, $route])
+            @foreach ([['Beranda', 'home'], ['Layanan', 'services'], ['Capster', 'capsters']] as [$label, $route])
                 <a href="{{ route($route) }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">{{ $label }}</a>
             @endforeach
             @auth
-                <a href="{{ route('bookings.index') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Booking Saya</a>
+                @if (auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.dashboard') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Dashboard Admin</a>
+                @else
+                    <a href="{{ route('booking.create') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Booking Sekarang</a>
+                    <a href="{{ route('bookings.index') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Booking Saya</a>
+                    <a href="{{ route('dashboard') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Dashboard</a>
+                @endif
             @else
+                <a href="{{ route('booking.create') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Booking Sekarang</a>
                 <a href="{{ route('login') }}" class="rounded-xl px-4 py-3 text-sm font-semibold text-gaz-muted hover:bg-white/5 hover:text-white">Login</a>
             @endauth
         </div>

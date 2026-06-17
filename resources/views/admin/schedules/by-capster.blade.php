@@ -1,0 +1,34 @@
+@extends('layouts.admin', ['heading' => 'Jadwal ' . $capster->name])
+
+@section('content')
+<div class="grid gap-6">
+    <section class="rounded-2xl border border-gaz-border bg-gaz-card p-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <a href="{{ route('admin.schedules.index') }}" class="mb-2 inline-flex items-center gap-1 text-sm text-gaz-muted hover:text-white">← Kembali ke Daftar Capster</a>
+                <h2 class="text-2xl font-black">Jadwal {{ $capster->name }}</h2>
+                <p class="mt-2 text-sm text-gaz-muted">{{ $schedules->count() }} jadwal terdaftar.</p>
+            </div>
+            <x-primary-button href="{{ route('admin.schedules.create') }}">Tambah Jadwal</x-primary-button>
+        </div>
+
+        <div class="mt-5 grid gap-3">
+            @forelse ($schedules as $schedule)
+                <a href="{{ route('admin.schedules.show', $schedule) }}" class="block rounded-2xl border border-gaz-border bg-black/25 p-4 transition hover:border-gaz-gold/60 hover:bg-gaz-gold/10 focus:outline-none focus:ring-2 focus:ring-gaz-gold/40">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="font-black">{{ $schedule->work_date->translatedFormat('d F Y') }}</p>
+                            <p class="text-sm text-gaz-muted">{{ str($schedule->start_time)->substr(0, 5) }} - {{ str($schedule->end_time)->substr(0, 5) }}</p>
+                        </div>
+                        <span class="text-sm font-bold {{ $schedule->is_available ? 'text-gaz-gold' : 'text-red-300' }}">
+                            {{ $schedule->is_available ? 'Tersedia' : 'Tidak Tersedia' }}
+                        </span>
+                    </div>
+                </a>
+            @empty
+                <div class="rounded-2xl border border-dashed border-gaz-border bg-black/20 p-5 text-sm text-gaz-muted">Belum ada jadwal untuk capster ini.</div>
+            @endforelse
+        </div>
+    </section>
+</div>
+@endsection

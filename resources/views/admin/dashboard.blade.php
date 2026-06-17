@@ -1,19 +1,12 @@
 @extends('layouts.admin', ['heading' => 'Dashboard'])
 
 @section('content')
-@php
-    $waiting = [
-        ['name' => 'Rizky Pratama', 'service' => 'Cukur favorit + Cuci', 'time' => '31 Mei 2026 · 10:00', 'capster' => 'Rudi'],
-        ['name' => 'Ariel Saputra', 'service' => 'Cukur trendcut', 'time' => '31 Mei 2026 · 11:00', 'capster' => 'Dika'],
-        ['name' => 'Dedi Santoso', 'service' => 'Warnai Rambut', 'time' => '31 Mei 2026 · 13:00', 'capster' => 'Bayu'],
-    ];
-@endphp
 <div class="grid gap-6">
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <x-stat-card label="Total Booking" value="128" icon="▣" />
-        <x-stat-card label="Booking Hari Ini" value="23" icon="◷" />
-        <x-stat-card label="Capster" value="8" icon="♙" />
-        <x-stat-card label="Pelanggan" value="256" icon="☷" />
+        <x-stat-card label="Total Booking" :value="$totalBookings" icon="B" />
+        <x-stat-card label="Booking Hari Ini" :value="$todayBookings" icon="H" />
+        <x-stat-card label="Capster" :value="$totalCapsters" icon="C" />
+        <x-stat-card label="Pelanggan" :value="$totalCustomers" icon="P" />
     </div>
     <div class="grid gap-6 xl:grid-cols-[1.3fr_1fr]">
         <section class="rounded-2xl border border-gaz-border bg-gaz-card p-6">
@@ -29,12 +22,30 @@
         <section class="rounded-2xl border border-gaz-border bg-gaz-card p-6">
             <h2 class="text-xl font-black">Booking Menunggu Konfirmasi</h2>
             <div class="mt-5 grid gap-4">
-                @foreach ($waiting as $item)
+                @forelse ($waitingBookings as $booking)
+                    @php
+                        $services = $booking->items->map(fn ($item) => $item->service->name)->join(' + ');
+                    @endphp
                     <article class="flex flex-col gap-4 rounded-2xl border border-gaz-border bg-black/25 p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex items-center gap-3"><div class="grid size-12 place-items-center rounded-xl bg-gaz-gold text-black font-black">{{ str($item['name'])->substr(0, 1) }}</div><div><p class="font-black">{{ $item['name'] }}</p><p class="text-xs text-gaz-muted">{{ $item['service'] }} · {{ $item['time'] }} · {{ $item['capster'] }}</p></div></div>
-                        <div class="flex gap-2"><x-secondary-button>Konfirmasi</x-secondary-button><x-primary-button href="{{ route('admin.bookings.whatsapp') }}">WhatsApp</x-primary-button></div>
+                        <div class="flex min-w-0 items-center gap-3">
+                            <div class="grid size-12 shrink-0 place-items-center rounded-xl bg-gaz-gold font-black text-black">{{ str($booking->user->name)->substr(0, 1) }}</div>
+                            <div class="min-w-0">
+                                <p class="font-black">{{ $booking->user->name }}</p>
+                                <p class="text-xs text-gaz-muted">{{ $services }} - {{ $booking->booking_start->translatedFormat('d F Y') }} - {{ $booking->booking_start->format('H:i') }} - {{ $booking->capster->name }}</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap gap-2 sm:justify-end">
+                            <form method="POST" action="{{ route('admin.bookings.confirm', $booking) }}">
+                                @csrf
+                                @method('PATCH')
+                                <x-secondary-button type="submit">Konfirmasi</x-secondary-button>
+                            </form>
+                            <x-primary-button href="{{ route('admin.bookings.whatsapp', $booking) }}">WhatsApp</x-primary-button>
+                        </div>
                     </article>
-                @endforeach
+                @empty
+                    <div class="rounded-2xl border border-dashed border-gaz-border bg-black/20 p-5 text-sm text-gaz-muted">Belum ada booking menunggu konfirmasi.</div>
+                @endforelse
             </div>
         </section>
     </div>

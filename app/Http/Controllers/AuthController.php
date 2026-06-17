@@ -33,10 +33,14 @@ class AuthController extends Controller
         }
 
         $request->session()->regenerate();
-        $bookingController->completePendingBooking($request);
+        if (Auth::user()->role === 'user') {
+            $bookingController->completePendingBooking($request);
+        }
+
+        $route = Auth::user()->role === 'admin' ? 'admin.dashboard' : 'bookings.index';
 
         return redirect()
-            ->route('bookings.index')
+            ->route($route)
             ->with('status', 'Berhasil masuk.');
     }
 

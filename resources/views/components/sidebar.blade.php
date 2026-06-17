@@ -8,7 +8,6 @@
         ['Pelanggan', 'admin.bookings.index', '☷'],
         ['Review', 'admin.dashboard', '★'],
         ['Pengaturan', 'admin.dashboard', '⚙'],
-        ['Logout', 'home', '↩'],
     ];
 @endphp
 
@@ -20,5 +19,11 @@
                 <span class="w-5 text-center">{{ $icon }}</span>{{ $label }}
             </a>
         @endforeach
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-gaz-muted transition hover:bg-white/5 hover:text-white">
+                <span class="w-5 text-center">↩</span>Logout
+            </button>
+        </form>
     </nav>
 </aside>

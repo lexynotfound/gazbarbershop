@@ -6,17 +6,73 @@ use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Capster;
 use App\Models\Service;
+use App\Services\BookingAvailability;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function create(): View|RedirectResponse
+    {
+        if (Auth::user()?->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
+        return view('user.bookings.create', [
+            'services' => Service::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Service $service): array => [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'price' => $service->price,
+                    'duration' => $service->duration_minutes,
+                ])
+                ->values(),
+            'capsters' => Capster::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+                ->map(fn (Capster $capster): array => [
+                    'id' => $capster->id,
+                    'name' => $capster->name,
+                    'rating' => $capster->rating,
+                    'service_fee' => $capster->service_fee,
+                ])
+                ->values(),
+        ]);
+    }
+
+    public function availableTimes(Request $request, BookingAvailability $availability): JsonResponse
+    {
+        $data = $request->validate([
+            'capster_id' => ['required', 'integer'],
+            'booking_date' => ['required', 'date'],
+            'duration_minutes' => ['required', 'integer', 'min:1'],
+        ]);
+
+        return response()->json([
+            'slots' => $availability->slotsForCapsterDate(
+                (int) $data['capster_id'],
+                $data['booking_date'],
+                (int) $data['duration_minutes'],
+            ),
+        ]);
+    }
+
     public function store(StoreBookingRequest $request): RedirectResponse
     {
+        if (Auth::user()?->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+
         $bookingData = $request->validated();
 
         if (! Auth::check()) {

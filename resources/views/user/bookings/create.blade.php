@@ -2,37 +2,43 @@
 
 @section('user-content')
 @php
-    $services = [
-        ['id' => 1, 'name' => 'Cukur Rambut', 'price' => 40000, 'duration' => 30],
-        ['id' => 2, 'name' => 'Cukur + Cuci', 'price' => 60000, 'duration' => 45],
-        ['id' => 3, 'name' => 'Warnai Rambut', 'price' => 150000, 'duration' => 90],
-        ['id' => 4, 'name' => 'Perawatan Jenggot', 'price' => 50000, 'duration' => 30],
-    ];
-    $capsters = [
-        ['id' => 1, 'name' => 'Rudi', 'rating' => 4.9, 'service_fee' => 50000],
-        ['id' => 2, 'name' => 'Dika', 'rating' => 4.8, 'service_fee' => 45000],
-        ['id' => 3, 'name' => 'Fahmi', 'rating' => 4.7, 'service_fee' => 40000],
-        ['id' => 4, 'name' => 'Bayu', 'rating' => 4.9, 'service_fee' => 60000],
-    ];
-    $times = ['08:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00'];
     $initialServiceId = (int) request('service');
 @endphp
 <div x-data="{
     step: 1,
     services: @js($services),
     capsters: @js($capsters),
-    times: @js($times),
+    slots: [],
+    loadingSlots: false,
     selectedServices: @js($initialServiceId ? [$initialServiceId] : []),
     selectedCapster: null,
     selectedDate: new Date().toISOString().slice(0, 10),
     selectedTime: null,
     money(value) { return new Intl.NumberFormat('id-ID').format(value || 0) },
-    toggleService(id) { this.selectedServices = this.selectedServices.includes(id) ? this.selectedServices.filter(serviceId => serviceId !== id) : [...this.selectedServices, id] },
+    init() { this.$watch('selectedServices', () => this.loadSlots()); this.$watch('selectedCapster', () => this.loadSlots()); this.$watch('selectedDate', () => this.loadSlots()) },
+    toggleService(id) { this.selectedServices = this.selectedServices.includes(id) ? this.selectedServices.filter(serviceId => serviceId !== id) : [...this.selectedServices, id]; this.selectedTime = null; this.loadSlots() },
     serviceTotal() { return this.services.filter(service => this.selectedServices.includes(service.id)).reduce((total, service) => total + service.price, 0) },
+    durationTotal() { return this.services.filter(service => this.selectedServices.includes(service.id)).reduce((total, service) => total + service.duration, 0) },
     capsterFee() { const capster = this.capsters.find(item => item.id === this.selectedCapster); return capster ? capster.service_fee : 0 },
     grandTotal() { return this.serviceTotal() + this.capsterFee() },
     canNext() { return (this.step === 1 && this.selectedServices.length) || (this.step === 2 && this.selectedCapster) || (this.step === 3 && this.selectedDate && this.selectedTime) || this.step === 4 },
-    canSubmit() { return this.selectedServices.length && this.selectedCapster && this.selectedDate && this.selectedTime }
+    canSubmit() { return this.selectedServices.length && this.selectedCapster && this.selectedDate && this.selectedTime },
+    async loadSlots() {
+        this.slots = [];
+        this.selectedTime = null;
+        if (!this.selectedServices.length || !this.selectedCapster || !this.selectedDate) return;
+
+        this.loadingSlots = true;
+        const params = new URLSearchParams({
+            capster_id: this.selectedCapster,
+            booking_date: this.selectedDate,
+            duration_minutes: this.durationTotal(),
+        });
+        const response = await fetch(`{{ route('booking.available-times') }}?${params.toString()}`, { headers: { 'Accept': 'application/json' } });
+        const data = await response.json();
+        this.slots = data.slots || [];
+        this.loadingSlots = false;
+    }
 }" class="grid gap-6 lg:grid-cols-[1fr_360px]">
     <form method="POST" action="{{ route('booking.store') }}" class="rounded-2xl border border-gaz-border bg-gaz-card p-5 sm:p-6">
         @csrf
@@ -86,8 +92,17 @@
             <h1 class="text-3xl font-black">Pilih Jadwal</h1>
             <div class="mt-5"><x-input-label>Tanggal</x-input-label><x-text-input type="date" x-model="selectedDate" /></div>
             <div class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <template x-for="time in times" :key="time">
-                    <button type="button" @click="selectedTime = time" class="rounded-xl border px-4 py-3 font-bold" :class="selectedTime === time ? 'border-gaz-gold bg-gaz-gold text-black' : 'border-gaz-border text-white hover:border-gaz-gold/50'" x-text="time"></button>
+                <template x-if="loadingSlots">
+                    <p class="col-span-full rounded-xl border border-gaz-border bg-black/20 p-4 text-sm text-gaz-muted">Memuat slot jadwal...</p>
+                </template>
+                <template x-if="!loadingSlots && !slots.length">
+                    <p class="col-span-full rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">Tidak ada slot tersedia untuk capster dan tanggal ini.</p>
+                </template>
+                <template x-for="slot in slots" :key="slot.time">
+                    <button type="button" @click="if (slot.available) selectedTime = slot.time" class="rounded-xl border px-4 py-3 text-left font-bold disabled:cursor-not-allowed disabled:opacity-50" :disabled="!slot.available" :class="selectedTime === slot.time ? 'border-gaz-gold bg-gaz-gold text-black' : (slot.available ? 'border-gaz-border text-white hover:border-gaz-gold/50' : 'border-red-500/30 bg-red-500/10 text-red-200')">
+                        <span class="block" x-text="slot.time"></span>
+                        <span class="mt-1 block text-xs font-bold" x-text="slot.status"></span>
+                    </button>
                 </template>
             </div>
             <p class="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-200">Datang maksimal 15 menit sebelum jadwal.</p>
