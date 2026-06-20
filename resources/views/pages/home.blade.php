@@ -1,20 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-@php
-    $services = [
-        ['name' => 'Cukur Rambut', 'price' => 40000, 'duration' => 30],
-        ['name' => 'Cukur + Cuci', 'price' => 60000, 'duration' => 45],
-        ['name' => 'Warnai Rambut', 'price' => 150000, 'duration' => 90],
-        ['name' => 'Perawatan Jenggot', 'price' => 50000, 'duration' => 30],
-    ];
-    $capsters = [
-        ['name' => 'Rudi', 'rating' => 4.9, 'service_fee' => 50000],
-        ['name' => 'Dika', 'rating' => 4.8, 'service_fee' => 45000],
-        ['name' => 'Fahmi', 'rating' => 4.7, 'service_fee' => 40000],
-    ];
-@endphp
-
 <section class="relative overflow-hidden border-b border-gaz-border bg-[radial-gradient(circle_at_80%_10%,rgba(214,168,79,.18),transparent_35%),#050505]">
     <div class="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_0.9fr] lg:px-8 lg:py-20">
         <div>

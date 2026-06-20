@@ -169,6 +169,73 @@ test('admin dashboard shows pending booking action routes', function () {
         ->assertSee('WhatsApp');
 });
 
+test('admin dashboard booking chart uses booking totals from the last thirty days', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create();
+    $service = activeService();
+    $capster = activeCapster();
+
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->setTime(9, 0),
+        'booking_end' => today()->setTime(9, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->setTime(10, 0),
+        'booking_end' => today()->setTime(10, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->subDay()->setTime(11, 0),
+        'booking_end' => today()->subDay()->setTime(11, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->subDays(30)->setTime(12, 0),
+        'booking_end' => today()->subDays(30)->setTime(12, 30),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard'))
+        ->assertSuccessful()
+        ->assertSee(route('admin.booking-chart'), false)
+        ->assertSee('Lihat Detail')
+        ->assertSee(today()->translatedFormat('d M').': 2 booking')
+        ->assertSee(today()->subDay()->translatedFormat('d M').': 1 booking')
+        ->assertDontSee(today()->subDays(30)->translatedFormat('d M').': 1 booking');
+});
+
+test('admin booking chart page shows chart and detail table from the last thirty days', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create();
+    $service = activeService();
+    $capster = activeCapster();
+
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->setTime(9, 0),
+        'booking_end' => today()->setTime(9, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->setTime(10, 0),
+        'booking_end' => today()->setTime(10, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->subDay()->setTime(11, 0),
+        'booking_end' => today()->subDay()->setTime(11, 30),
+    ]);
+    pendingBooking($customer, $service, $capster, [
+        'booking_start' => today()->subDays(30)->setTime(12, 0),
+        'booking_end' => today()->subDays(30)->setTime(12, 30),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.booking-chart'))
+        ->assertSuccessful()
+        ->assertSee('Booking Terbaru')
+        ->assertSee('Detail Data')
+        ->assertSee(route('admin.dashboard'), false)
+        ->assertSee(today()->translatedFormat('d M').': 2 booking')
+        ->assertSee(today()->subDay()->translatedFormat('d M').': 1 booking')
+        ->assertDontSee(today()->subDays(30)->translatedFormat('d M').': 1 booking');
+});
+
 test('admin bookings page lists bookings with valid whatsapp links', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create(['name' => 'Ariel Saputra']);

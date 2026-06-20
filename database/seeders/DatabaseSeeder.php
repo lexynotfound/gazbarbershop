@@ -113,6 +113,43 @@ class DatabaseSeeder extends Seeder
             ],
         );
 
+        $loyalCustomer = User::query()->updateOrCreate(
+            ['email' => 'loyal@gazbarbershop.com'],
+            [
+                'name' => 'Rizky Loyal',
+                'phone' => '6281234567888',
+                'role' => 'user',
+                'password' => Hash::make('password'),
+            ],
+        );
+
+        foreach (range(1, 3) as $index) {
+            $completedBooking = Booking::query()->updateOrCreate(
+                ['booking_code' => 'GAZ-REPEAT-00'.$index],
+                [
+                    'user_id' => $loyalCustomer->id,
+                    'capster_id' => $capsters->get($index % $capsters->count())->id,
+                    'booking_start' => now()->subDays(7 * $index)->setTime(10 + $index, 0),
+                    'booking_end' => now()->subDays(7 * $index)->setTime(10 + $index, 30),
+                    'service_total' => $services->first()->price,
+                    'capster_fee' => $capsters->get($index % $capsters->count())->service_fee,
+                    'grand_total' => $services->first()->price + $capsters->get($index % $capsters->count())->service_fee,
+                    'status' => 'COMPLETED',
+                    'completed_at' => now()->subDays(7 * $index)->setTime(10 + $index, 30),
+                ],
+            );
+
+            BookingItem::query()->updateOrCreate(
+                ['booking_id' => $completedBooking->id, 'service_id' => $services->first()->id],
+                ['price' => $services->first()->price, 'duration_minutes' => $services->first()->duration_minutes],
+            );
+
+            Payment::query()->updateOrCreate(
+                ['booking_id' => $completedBooking->id],
+                ['amount' => $completedBooking->grand_total, 'method' => 'cash', 'status' => 'paid'],
+            );
+        }
+
         $admin->touch();
     }
 }

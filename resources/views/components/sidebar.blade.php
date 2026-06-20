@@ -5,8 +5,8 @@
         ['Capster', 'admin.capsters.index', '♙'],
         ['Layanan', 'admin.services.index', '✂'],
         ['Jadwal Capster', 'admin.schedules.index', '◷'],
-        ['Pelanggan', 'admin.bookings.index', '☷'],
-        ['Review', 'admin.dashboard', '★'],
+        ['Pelanggan', 'admin.customers.index', 'P'],
+        ['Review', 'admin.reviews.index', '★'],
         ['Pengaturan', 'admin.dashboard', '⚙'],
     ];
 @endphp

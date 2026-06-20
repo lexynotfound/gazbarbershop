@@ -32,6 +32,7 @@ class BookingController extends Controller
                 ->map(fn (Service $service): array => [
                     'id' => $service->id,
                     'name' => $service->name,
+                    'image' => $service->image,
                     'price' => $service->price,
                     'duration' => $service->duration_minutes,
                 ])

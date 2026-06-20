@@ -1,17 +1,22 @@
 <?php
 
+use App\Http\Controllers\Admin\BookingChartController as AdminBookingChartController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
 use App\Http\Controllers\Admin\CapsterController as AdminCapsterController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\ScheduleController as AdminScheduleController;
+use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'pages.home')->name('home');
-Route::view('/layanan', 'pages.services')->name('services');
-Route::view('/capster', 'pages.capsters')->name('capsters');
+Route::get('/', [PageController::class, 'home'])->name('home');
+Route::get('/layanan', [PageController::class, 'services'])->name('services');
+Route::get('/capster', [PageController::class, 'capsters'])->name('capsters');
 Route::view('/login', 'pages.login')->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 Route::view('/register', 'pages.register')->name('register');
@@ -32,6 +37,7 @@ Route::middleware(['auth', 'user'])->group(function (): void {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/', AdminDashboardController::class)->name('dashboard');
+    Route::get('/booking-chart', AdminBookingChartController::class)->name('booking-chart');
     Route::get('/bookings', [AdminBookingController::class, 'index'])->name('bookings.index');
     Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{booking}/whatsapp-confirmation', [AdminBookingController::class, 'whatsappConfirmation'])->name('bookings.whatsapp');
@@ -43,9 +49,15 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/capsters/edit', [AdminCapsterController::class, 'editFirst']);
     Route::get('/capsters/{capster}/edit', [AdminCapsterController::class, 'edit'])->name('capsters.edit');
     Route::patch('/capsters/{capster}', [AdminCapsterController::class, 'update'])->name('capsters.update');
-    Route::view('/services', 'admin.services.index')->name('services.index');
-    Route::view('/services/create', 'admin.services.create')->name('services.create');
-    Route::view('/services/edit', 'admin.services.edit')->name('services.edit');
+    Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+    Route::get('/customers/{user}/promo-whatsapp', [AdminCustomerController::class, 'promoWhatsapp'])->name('customers.promo-whatsapp');
+    Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
+    Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+    Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
+    Route::get('/services/create', [AdminServiceController::class, 'create'])->name('services.create');
+    Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
+    Route::get('/services/{service}/edit', [AdminServiceController::class, 'edit'])->name('services.edit');
+    Route::patch('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
     Route::get('/schedules', [AdminScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/create', [AdminScheduleController::class, 'create'])->name('schedules.create');
     Route::get('/schedules/edit', [AdminScheduleController::class, 'editFirst']);

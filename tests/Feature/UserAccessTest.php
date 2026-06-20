@@ -96,15 +96,48 @@ test('regular user cannot access admin dashboard', function () {
 });
 
 test('navbar points authenticated admin to admin routes', function () {
-    $admin = User::factory()->create(['role' => 'admin']);
+    $admin = User::factory()->create(['name' => 'Admin GAZ', 'role' => 'admin']);
 
     $this->actingAs($admin)
         ->get(route('home'))
         ->assertSuccessful()
+        ->assertSee('aria-label="Notifikasi"', false)
+        ->assertSee('Halo, Admin')
+        ->assertSee('Admin GAZ')
+        ->assertSee('A')
+        ->assertSee('Dashboard Admin')
         ->assertSee(route('admin.dashboard'), false)
         ->assertSee(route('admin.bookings.index'), false)
         ->assertDontSee(route('dashboard'), false)
         ->assertDontSee(route('bookings.index'), false);
+});
+
+test('navbar shows authenticated user profile menu to user dashboard', function () {
+    $user = User::factory()->create(['name' => 'Member Demo', 'role' => 'user']);
+
+    $this->actingAs($user)
+        ->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee('aria-label="Notifikasi"', false)
+        ->assertSee('Halo, Member')
+        ->assertSee('Member Demo')
+        ->assertSee('M')
+        ->assertSee('Dashboard User')
+        ->assertSee(route('dashboard'), false)
+        ->assertSee(route('booking.create'), false)
+        ->assertSee(route('bookings.index'), false)
+        ->assertDontSee(route('admin.dashboard'), false);
+});
+
+test('navbar keeps guest actions without profile menu', function () {
+    $this->get(route('home'))
+        ->assertSuccessful()
+        ->assertSee(route('login'), false)
+        ->assertSee(route('booking.create'), false)
+        ->assertDontSee('aria-label="Notifikasi"', false)
+        ->assertDontSee('Halo,')
+        ->assertDontSee('Dashboard User')
+        ->assertDontSee('Dashboard Admin');
 });
 
 test('booking saya only shows bookings owned by the current user', function () {

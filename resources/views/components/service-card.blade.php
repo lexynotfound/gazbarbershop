@@ -2,12 +2,17 @@
 
 @php
     $classes = 'group block rounded-2xl border border-gaz-border bg-gaz-card p-5 transition hover:-translate-y-1 hover:border-gaz-gold/50 hover:bg-white/[0.06]';
+    $image = $service['image'] ?? null;
 @endphp
 
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
         <div class="flex items-center gap-4">
-            <div class="grid size-14 place-items-center rounded-2xl bg-gaz-gold/10 text-2xl text-gaz-gold">✂</div>
+            @if ($image)
+                <img src="{{ asset('storage/'.$image) }}" alt="Gambar {{ $service['name'] }}" class="size-14 rounded-2xl object-cover">
+            @else
+                <div class="grid size-14 place-items-center rounded-2xl bg-gaz-gold/10 text-2xl text-gaz-gold">✂</div>
+            @endif
             <div class="min-w-0">
                 <h3 class="truncate text-lg font-black text-white">{{ $service['name'] }}</h3>
                 <p class="text-sm text-gaz-muted">{{ $service['duration'] ?? $service['duration_minutes'] }} menit</p>
@@ -21,7 +26,11 @@
 @else
     <article {{ $attributes->merge(['class' => $classes]) }}>
         <div class="flex items-center gap-4">
-            <div class="grid size-14 place-items-center rounded-2xl bg-gaz-gold/10 text-2xl text-gaz-gold">✂</div>
+            @if ($image)
+                <img src="{{ asset('storage/'.$image) }}" alt="Gambar {{ $service['name'] }}" class="size-14 rounded-2xl object-cover">
+            @else
+                <div class="grid size-14 place-items-center rounded-2xl bg-gaz-gold/10 text-2xl text-gaz-gold">✂</div>
+            @endif
             <div class="min-w-0">
                 <h3 class="truncate text-lg font-black text-white">{{ $service['name'] }}</h3>
                 <p class="text-sm text-gaz-muted">{{ $service['duration'] ?? $service['duration_minutes'] }} menit</p>
