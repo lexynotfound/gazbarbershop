@@ -95,7 +95,7 @@ test('regular user can open booking review page', function () {
     $this->actingAs($user)
         ->get(route('booking.review'))
         ->assertSuccessful()
-        ->assertSee('Berikan Penilaian');
+        ->assertSee('Pilih Booking untuk Direview');
 });
 
 test('regular user cannot access admin dashboard', function () {

@@ -52,7 +52,7 @@ class BookingController extends Controller
     public function index(): View
     {
         $bookings = Booking::query()
-            ->with(['capster', 'items.service'])
+            ->with(['capster', 'items.service', 'review'])
             ->whereBelongsTo(Auth::user())
             ->latest('booking_start')
             ->get();

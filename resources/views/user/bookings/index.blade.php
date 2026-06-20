@@ -30,8 +30,10 @@
                     </div>
                     <div class="mt-4 flex flex-wrap gap-2">
                         <x-secondary-button href="{{ route('booking.show', $booking) }}">Detail</x-secondary-button>
-                        @if ($booking->status === 'COMPLETED')
-                            <x-primary-button href="{{ route('booking.review') }}">Review</x-primary-button>
+                        @if ($booking->status === 'COMPLETED' && ! $booking->review)
+                            <x-primary-button href="{{ route('booking.review', ['booking' => $booking->id]) }}">Review</x-primary-button>
+                        @elseif ($booking->status === 'REVIEWED' || $booking->review)
+                            <span class="inline-flex min-h-11 items-center justify-center rounded-xl border border-gaz-border px-5 py-3 text-sm font-bold text-gaz-muted">Sudah direview</span>
                         @endif
                         @if ($booking->status === 'PAID')
                             <x-primary-button>Selesai</x-primary-button>

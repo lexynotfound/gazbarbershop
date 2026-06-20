@@ -12,6 +12,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
+use App\Http\Controllers\User\ProfileController as UserProfileController;
+use App\Http\Controllers\User\ReviewController as UserReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [PageController::class, 'home'])->name('home');
@@ -29,9 +31,11 @@ Route::post('/booking', [BookingController::class, 'store'])->name('booking.stor
 
 Route::middleware(['auth', 'user'])->group(function (): void {
     Route::view('/dashboard', 'user.dashboard')->name('dashboard');
-    Route::view('/profil', 'user.profile')->name('profile');
+    Route::get('/profil', [UserProfileController::class, 'edit'])->name('profile');
+    Route::patch('/profil', [UserProfileController::class, 'update'])->name('profile.update');
     Route::get('/booking-saya', [UserBookingController::class, 'index'])->name('bookings.index');
-    Route::view('/booking/review', 'user.bookings.review')->name('booking.review');
+    Route::get('/booking/review', [UserReviewController::class, 'index'])->name('booking.review');
+    Route::post('/booking/review', [UserReviewController::class, 'store'])->name('booking.review.store');
     Route::get('/booking/{booking}', [UserBookingController::class, 'show'])->name('booking.show');
 });
 
