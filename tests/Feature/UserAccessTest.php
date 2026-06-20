@@ -89,6 +89,15 @@ test('guest is redirected from authenticated user pages', function () {
     $this->get(route('bookings.index'))->assertRedirect(route('login'));
 });
 
+test('regular user can open booking review page', function () {
+    $user = User::factory()->create(['role' => 'user']);
+
+    $this->actingAs($user)
+        ->get(route('booking.review'))
+        ->assertSuccessful()
+        ->assertSee('Berikan Penilaian');
+});
+
 test('regular user cannot access admin dashboard', function () {
     $this->actingAs(User::factory()->create(['role' => 'user']))
         ->get(route('admin.dashboard'))

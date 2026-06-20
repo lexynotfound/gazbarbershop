@@ -31,8 +31,8 @@ Route::middleware(['auth', 'user'])->group(function (): void {
     Route::view('/dashboard', 'user.dashboard')->name('dashboard');
     Route::view('/profil', 'user.profile')->name('profile');
     Route::get('/booking-saya', [UserBookingController::class, 'index'])->name('bookings.index');
-    Route::get('/booking/{booking}', [UserBookingController::class, 'show'])->name('booking.show');
     Route::view('/booking/review', 'user.bookings.review')->name('booking.review');
+    Route::get('/booking/{booking}', [UserBookingController::class, 'show'])->name('booking.show');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function (): void {
