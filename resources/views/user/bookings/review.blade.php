@@ -83,5 +83,35 @@
             </div>
         </section>
     @endif
+
+    <section class="rounded-2xl border border-gaz-border bg-gaz-card p-6">
+        <h2 class="text-2xl font-black">Review yang Sudah Dikirim</h2>
+        <p class="mt-2 text-sm text-gaz-muted">Daftar ulasan yang sudah kamu kirim untuk capster.</p>
+
+        <div class="mt-6 grid gap-4">
+            @forelse ($submittedReviews as $review)
+                @php
+                    $services = $review->booking?->items->map(fn ($item) => $item->service?->name)->filter()->join(' + ');
+                @endphp
+
+                <article class="rounded-2xl border border-gaz-border bg-black/25 p-5">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-gaz-gold">{{ $review->booking?->booking_code ?? '-' }}</p>
+                            <p class="mt-1 font-black">{{ $review->capster?->name ?? '-' }}</p>
+                            <p class="mt-1 text-sm text-gaz-muted">{{ $services ?: '-' }}</p>
+                            <p class="mt-3 leading-7 text-gaz-muted">{{ $review->comment ?: '-' }}</p>
+                        </div>
+                        <div class="shrink-0 text-left sm:text-right">
+                            <span class="inline-flex rounded-full border border-gaz-gold/30 bg-gaz-gold/10 px-3 py-1 text-xs font-bold text-gaz-gold">{{ $review->rating }}/5</span>
+                            <p class="mt-2 text-xs font-bold text-gaz-muted">{{ $review->created_at?->translatedFormat('d F Y H:i') ?? '-' }}</p>
+                        </div>
+                    </div>
+                </article>
+            @empty
+                <div class="rounded-2xl border border-dashed border-gaz-border p-8 text-center text-gaz-muted">Belum ada review yang sudah dikirim.</div>
+            @endforelse
+        </div>
+    </section>
 </div>
 @endsection

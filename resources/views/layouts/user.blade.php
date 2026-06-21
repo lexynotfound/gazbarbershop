@@ -8,7 +8,7 @@
                     @if (auth()->user()->role === 'admin')
                         <a href="{{ route('admin.dashboard') }}" class="rounded-xl px-4 py-3 text-sm font-bold text-gaz-muted hover:bg-white/5 hover:text-white">Dashboard Admin</a>
                     @else
-                        @foreach ([['Booking Sekarang', 'booking.create'], ['Dashboard', 'dashboard'], ['Booking Saya', 'bookings.index'], ['Riwayat Booking', 'bookings.index'], ['Review Saya', 'booking.review'], ['Profil', 'profile']] as [$label, $route])
+                        @foreach ([['Booking Sekarang', 'booking.create'], ['Dashboard', 'dashboard'], ['Booking Saya', 'bookings.index'], ['Riwayat Booking', 'bookings.history'], ['Review Saya', 'booking.review'], ['Profil', 'profile']] as [$label, $route])
                             <a href="{{ route($route) }}" class="rounded-xl px-4 py-3 text-sm font-bold text-gaz-muted hover:bg-white/5 hover:text-white">{{ $label }}</a>
                         @endforeach
                     @endif

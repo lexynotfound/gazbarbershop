@@ -149,6 +149,35 @@ test('admin can open whatsapp promo for repeat customer', function () {
         ->assertRedirect('https://wa.me/628123456789?text='.urlencode($message));
 });
 
+test('admin promo whatsapp normalizes local customer phone number', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create([
+        'name' => 'Dina Loyal',
+        'phone' => '08123456789',
+        'role' => 'user',
+    ]);
+    $service = customerService();
+    $capster = customerCapster();
+
+    customerBooking($customer, $service, $capster, 'COMPLETED');
+    customerBooking($customer, $service, $capster, 'COMPLETED');
+    customerBooking($customer, $service, $capster, 'COMPLETED');
+
+    $message = implode("\n", [
+        'Halo Dina Loyal, terima kasih sudah sering booking di GAZ Barbershop.',
+        '',
+        'Sebagai pelanggan loyal, kami punya promo spesial untuk kunjungan berikutnya.',
+        'Silakan booking kembali dan tunjukkan pesan ini saat datang.',
+        '',
+        'Terima kasih.',
+        'GAZ Barbershop',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.customers.promo-whatsapp', $customer))
+        ->assertRedirect('https://wa.me/628123456789?text='.urlencode($message));
+});
+
 test('admin cannot send promo whatsapp to non repeat customer', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create([

@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\Capster;
 use App\Models\CapsterSchedule;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,6 +76,18 @@ function pendingBooking(User $user, Service $service, Capster $capster, array $a
     return $booking;
 }
 
+test('auth pages include password visibility toggle buttons', function () {
+    $this->get(route('login'))
+        ->assertSuccessful()
+        ->assertSee('x-bind:type="visible ? \'text\' : \'password\'"', false)
+        ->assertSee('Tampilkan password', false);
+
+    $this->get(route('register'))
+        ->assertSuccessful()
+        ->assertSee('x-bind:type="visible ? \'text\' : \'password\'"', false)
+        ->assertSee('Tampilkan password', false);
+});
+
 test('guest booking is held until registration completes', function () {
     $service = activeService();
     $capster = activeCapster();
@@ -88,7 +101,7 @@ test('guest booking is held until registration completes', function () {
     $this->post(route('register.store'), [
         'name' => 'Member Baru',
         'email' => 'member@example.com',
-        'phone' => '628123456789',
+        'phone' => '08123456789',
         'password' => 'password',
     ])
         ->assertRedirect(route('bookings.index'))
@@ -105,6 +118,16 @@ test('guest booking is held until registration completes', function () {
         'service_id' => $service->id,
         'price' => 40000,
         'duration_minutes' => 30,
+    ]);
+    $this->assertDatabaseHas('users', [
+        'email' => 'member@example.com',
+        'phone' => '628123456789',
+    ]);
+    $this->assertDatabaseHas('payments', [
+        'amount' => 90000,
+        'method' => 'cash',
+        'status' => 'unpaid',
+        'paid_at' => null,
     ]);
 });
 
@@ -124,6 +147,12 @@ test('authenticated user booking is created immediately from database prices', f
         'service_total' => 60000,
         'capster_fee' => 45000,
         'grand_total' => 105000,
+    ]);
+    $this->assertDatabaseHas('payments', [
+        'amount' => 105000,
+        'method' => 'cash',
+        'status' => 'unpaid',
+        'paid_at' => null,
     ]);
 });
 
@@ -165,7 +194,7 @@ test('admin dashboard shows pending booking action routes', function () {
         ->assertSee('Cukur Favorit')
         ->assertSee(route('admin.bookings.whatsapp', $booking), false)
         ->assertSee(route('admin.bookings.confirm', $booking), false)
-        ->assertSee('Konfirmasi')
+        ->assertSee('Tandai WA Terkirim')
         ->assertSee('WhatsApp');
 });
 
@@ -257,7 +286,10 @@ test('admin bookings page lists bookings with valid whatsapp links', function ()
 
 test('admin booking detail and whatsapp pages include breadcrumbs back to list', function () {
     $admin = User::factory()->create(['role' => 'admin']);
-    $customer = User::factory()->create(['name' => 'Dedi Santoso']);
+    $customer = User::factory()->create([
+        'name' => 'Dedi Santoso',
+        'phone' => '08123456789',
+    ]);
     $service = activeService(['name' => 'Warnai Rambut']);
     $capster = activeCapster(['name' => 'Bayu']);
     $booking = pendingBooking($customer, $service, $capster);
@@ -276,11 +308,12 @@ test('admin booking detail and whatsapp pages include breadcrumbs back to list',
         ->assertSee('WhatsApp')
         ->assertSee('Tolak Booking')
         ->assertSee($booking->booking_code)
+        ->assertSee('https://wa.me/628123456789?text=', false)
         ->assertSee(route('admin.bookings.index'), false)
         ->assertSee(route('admin.bookings.show', $booking), false);
 });
 
-test('admin can confirm a pending booking from dashboard action', function () {
+test('admin can mark whatsapp as sent for a pending booking', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create();
     $service = activeService();
@@ -298,6 +331,170 @@ test('admin can confirm a pending booking from dashboard action', function () {
         ->and($booking->customer_response_deadline)->not->toBeNull();
 });
 
+test('admin can mark a whatsapp-confirmed user as accepted', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create();
+    $service = activeService();
+    $capster = activeCapster();
+    $booking = pendingBooking($customer, $service, $capster, [
+        'status' => 'WAITING_CUSTOMER_CONFIRMATION',
+        'admin_confirmed_at' => now(),
+        'customer_response_deadline' => now()->addMinutes(10),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.bookings.show', $booking))
+        ->assertSuccessful()
+        ->assertSee('Menunggu Balasan WA')
+        ->assertDontSee('Waiting Customer Confirmation')
+        ->assertSee(route('admin.bookings.accept', $booking), false)
+        ->assertSee('User Jadi Datang');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.bookings.accept', $booking))
+        ->assertRedirect(route('admin.bookings.show', $booking));
+
+    $booking->refresh();
+
+    expect($booking->status)->toBe('ACCEPTED')
+        ->and($booking->customer_response_deadline)->toBeNull();
+});
+
+test('admin can check in an active booking', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create();
+    $service = activeService();
+    $capster = activeCapster();
+    $booking = pendingBooking($customer, $service, $capster, [
+        'status' => 'ACCEPTED',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.bookings.show', $booking))
+        ->assertSuccessful()
+        ->assertSee(route('admin.bookings.check-in', $booking), false)
+        ->assertSee('Check-in');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.bookings.check-in', $booking))
+        ->assertRedirect(route('admin.bookings.show', $booking));
+
+    $booking->refresh();
+
+    expect($booking->status)->toBe('CHECKED_IN')
+        ->and($booking->checked_in_at)->not->toBeNull();
+});
+
+test('admin can complete a checked in booking so the user can review it', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create(['role' => 'user']);
+    $service = activeService(['name' => 'Cukur Rambut + Cuci']);
+    $capster = activeCapster(['name' => 'Rudi']);
+    $booking = pendingBooking($customer, $service, $capster, [
+        'booking_code' => 'GAZ-READY-REVIEW',
+        'status' => 'CHECKED_IN',
+        'checked_in_at' => now(),
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.bookings.show', $booking))
+        ->assertSuccessful()
+        ->assertSee(route('admin.bookings.complete', $booking), false)
+        ->assertSee('Selesaikan Booking');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.bookings.complete', $booking))
+        ->assertRedirect(route('admin.bookings.show', $booking));
+
+    $booking->refresh();
+
+    expect($booking->status)->toBe('COMPLETED')
+        ->and($booking->completed_at)->not->toBeNull();
+
+    $this->actingAs($customer)
+        ->get(route('booking.review'))
+        ->assertSuccessful()
+        ->assertSee('Pilih Booking untuk Direview')
+        ->assertSee('GAZ-READY-REVIEW')
+        ->assertSee('Cukur Rambut + Cuci')
+        ->assertSee('Rudi')
+        ->assertSee(route('booking.review', ['booking' => $booking->id]), false);
+});
+
+test('admin can mark a booking payment as paid with a selected method', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create(['role' => 'user']);
+    $service = activeService(['name' => 'Cukur Rambut']);
+    $capster = activeCapster(['name' => 'Rudi']);
+    $booking = pendingBooking($customer, $service, $capster, [
+        'booking_code' => 'GAZ-PAID-QRIS',
+    ]);
+
+    $payment = Payment::query()->create([
+        'booking_id' => $booking->id,
+        'amount' => $booking->grand_total,
+        'method' => 'cash',
+        'status' => 'unpaid',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.bookings.show', $booking))
+        ->assertSuccessful()
+        ->assertSee('Belum Dibayar')
+        ->assertSee(route('admin.bookings.payment.paid', $booking), false)
+        ->assertSee('Tandai Lunas');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.bookings.payment.paid', $booking), [
+            'method' => 'qris',
+        ])
+        ->assertRedirect(route('admin.bookings.show', $booking));
+
+    $payment->refresh();
+
+    expect($payment->status)->toBe('paid')
+        ->and($payment->method)->toBe('qris')
+        ->and($payment->amount)->toBe($booking->grand_total)
+        ->and($payment->paid_at)->not->toBeNull();
+});
+
+test('backfill booking payments command creates missing payments for old bookings', function () {
+    $customer = User::factory()->create(['role' => 'user']);
+    $service = activeService();
+    $capster = activeCapster();
+    $completedBooking = pendingBooking($customer, $service, $capster, [
+        'booking_code' => 'GAZ-260621-BZZSAI',
+        'status' => 'COMPLETED',
+        'completed_at' => now()->subHour(),
+        'grand_total' => 360000,
+    ]);
+    $pendingBooking = pendingBooking($customer, $service, $capster, [
+        'booking_code' => 'GAZ-PENDING-BACKFILL',
+        'status' => 'PENDING',
+        'grand_total' => 150000,
+    ]);
+
+    $this->artisan('app:backfill-booking-payments')
+        ->expectsOutput('Created 2 missing payment(s).')
+        ->expectsOutput('Marked 1 payment(s) as paid.')
+        ->expectsOutput('Marked 1 payment(s) as unpaid.')
+        ->assertSuccessful();
+
+    $this->assertDatabaseHas('payments', [
+        'booking_id' => $completedBooking->id,
+        'amount' => 360000,
+        'method' => 'cash',
+        'status' => 'paid',
+    ]);
+    $this->assertDatabaseHas('payments', [
+        'booking_id' => $pendingBooking->id,
+        'amount' => 150000,
+        'method' => 'cash',
+        'status' => 'unpaid',
+        'paid_at' => null,
+    ]);
+});
+
 test('admin can reject a booking from whatsapp confirmation action', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create();
@@ -310,6 +507,56 @@ test('admin can reject a booking from whatsapp confirmation action', function ()
         ->assertRedirect(route('admin.bookings.index'));
 
     expect($booking->refresh()->status)->toBe('REJECTED');
+});
+
+test('late booking command cancels unconfirmed and late accepted bookings', function () {
+    $customer = User::factory()->create();
+    $service = activeService();
+    $capster = activeCapster();
+    $lateBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->subMinutes(16),
+        'booking_end' => now()->addMinutes(14),
+        'status' => 'ACCEPTED',
+    ]);
+    $pendingLateBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->subMinutes(17),
+        'booking_end' => now()->addMinutes(13),
+        'status' => 'PENDING',
+    ]);
+    $unconfirmedBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->addHour(),
+        'booking_end' => now()->addMinutes(90),
+        'status' => 'WAITING_CUSTOMER_CONFIRMATION',
+        'customer_response_deadline' => now()->subMinute(),
+    ]);
+    $recentBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->subMinutes(14),
+        'booking_end' => now()->addMinutes(16),
+        'status' => 'ACCEPTED',
+    ]);
+    $checkedInBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->subMinutes(20),
+        'booking_end' => now()->addMinutes(10),
+        'status' => 'CHECKED_IN',
+        'checked_in_at' => now()->subMinutes(18),
+    ]);
+    $completedBooking = pendingBooking($customer, $service, $capster, [
+        'booking_start' => now()->subMinutes(20),
+        'booking_end' => now()->addMinutes(10),
+        'status' => 'COMPLETED',
+    ]);
+
+    $this->artisan('app:cancel-late-bookings')
+        ->expectsOutput('Auto-cancelled 1 unconfirmed booking(s).')
+        ->expectsOutput('Late-cancelled 2 booking(s).')
+        ->assertSuccessful();
+
+    expect($lateBooking->refresh()->status)->toBe('LATE_CANCELLED')
+        ->and($pendingLateBooking->refresh()->status)->toBe('LATE_CANCELLED')
+        ->and($unconfirmedBooking->refresh()->status)->toBe('AUTO_CANCELLED')
+        ->and($recentBooking->refresh()->status)->toBe('ACCEPTED')
+        ->and($checkedInBooking->refresh()->status)->toBe('CHECKED_IN')
+        ->and($completedBooking->refresh()->status)->toBe('COMPLETED');
 });
 
 test('booking availability endpoint marks active bookings as unavailable', function () {

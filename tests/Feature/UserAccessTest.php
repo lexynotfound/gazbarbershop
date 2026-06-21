@@ -3,6 +3,7 @@
 use App\Models\Booking;
 use App\Models\Capster;
 use App\Models\CapsterSchedule;
+use App\Models\Review;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -81,12 +82,14 @@ test('admin is redirected away from user-only pages', function () {
     $this->actingAs($admin)->get(route('dashboard'))->assertRedirect(route('admin.dashboard'));
     $this->actingAs($admin)->get(route('booking.create'))->assertRedirect(route('admin.dashboard'));
     $this->actingAs($admin)->get(route('bookings.index'))->assertRedirect(route('admin.dashboard'));
+    $this->actingAs($admin)->get(route('bookings.history'))->assertRedirect(route('admin.dashboard'));
     $this->actingAs($admin)->get(route('profile'))->assertRedirect(route('admin.dashboard'));
 });
 
 test('guest is redirected from authenticated user pages', function () {
     $this->get(route('dashboard'))->assertRedirect(route('login'));
     $this->get(route('bookings.index'))->assertRedirect(route('login'));
+    $this->get(route('bookings.history'))->assertRedirect(route('login'));
 });
 
 test('regular user can open booking review page', function () {
@@ -96,6 +99,46 @@ test('regular user can open booking review page', function () {
         ->get(route('booking.review'))
         ->assertSuccessful()
         ->assertSee('Pilih Booking untuk Direview');
+});
+
+test('user dashboard statistics are calculated from current user data', function () {
+    $user = User::factory()->create(['role' => 'user']);
+    $otherUser = User::factory()->create(['role' => 'user']);
+    $service = accessService();
+    $capster = accessCapster();
+
+    accessBooking($user, $service, $capster, ['status' => 'PENDING']);
+    accessBooking($user, $service, $capster, ['status' => 'CHECKED_IN']);
+    $completedBooking = accessBooking($user, $service, $capster, ['status' => 'COMPLETED']);
+    $reviewedBooking = accessBooking($user, $service, $capster, ['status' => 'REVIEWED']);
+    accessBooking($user, $service, $capster, ['status' => 'REJECTED']);
+    accessBooking($otherUser, $service, $capster, ['status' => 'PENDING']);
+
+    Review::query()->create([
+        'booking_id' => $reviewedBooking->id,
+        'user_id' => $user->id,
+        'capster_id' => $capster->id,
+        'rating' => 5,
+        'comment' => 'Mantap.',
+    ]);
+    Review::query()->create([
+        'booking_id' => accessBooking($otherUser, $service, $capster, ['status' => 'REVIEWED'])->id,
+        'user_id' => $otherUser->id,
+        'capster_id' => $capster->id,
+        'rating' => 4,
+        'comment' => 'Review user lain.',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertSuccessful()
+        ->assertSee('Booking Aktif')
+        ->assertSee('>2<', false)
+        ->assertSee('Selesai')
+        ->assertSee('Review')
+        ->assertSee('>1<', false);
+
+    expect($completedBooking->status)->toBe('COMPLETED');
 });
 
 test('regular user cannot access admin dashboard', function () {
@@ -153,12 +196,17 @@ test('booking saya only shows bookings owned by the current user', function () {
     $user = User::factory()->create(['name' => 'Member Demo', 'role' => 'user']);
     $otherUser = User::factory()->create(['name' => 'Member Lain', 'role' => 'user']);
     $service = accessService(['name' => 'Cukur Rambut + Cuci']);
+    $finishedService = accessService(['name' => 'Hair Spa Selesai']);
     $otherService = accessService(['name' => 'Warnai Rambut']);
     $capster = accessCapster(['name' => 'Rudi']);
 
     $ownBooking = accessBooking($user, $service, $capster, [
         'booking_code' => 'GAZ-260617-OWN',
         'grand_total' => 150000,
+    ]);
+    $finishedBooking = accessBooking($user, $finishedService, $capster, [
+        'booking_code' => 'GAZ-260617-DONE',
+        'status' => 'COMPLETED',
     ]);
     $otherBooking = accessBooking($otherUser, $otherService, $capster, [
         'booking_code' => 'GAZ-260617-OTHER',
@@ -168,12 +216,56 @@ test('booking saya only shows bookings owned by the current user', function () {
         ->get(route('bookings.index'))
         ->assertSuccessful()
         ->assertSee('Booking Saya')
+        ->assertSee(route('bookings.history'), false)
         ->assertSee($ownBooking->booking_code)
         ->assertSee('Cukur Rambut + Cuci')
         ->assertSee('Rudi')
         ->assertSee('Rp150.000')
+        ->assertDontSee($finishedBooking->booking_code)
+        ->assertDontSee('Hair Spa Selesai')
         ->assertDontSee($otherBooking->booking_code)
         ->assertDontSee('Warnai Rambut');
+});
+
+test('riwayat booking only shows finished and cancelled bookings owned by current user', function () {
+    $user = User::factory()->create(['name' => 'Member Demo', 'role' => 'user']);
+    $otherUser = User::factory()->create(['name' => 'Member Lain', 'role' => 'user']);
+    $activeService = accessService(['name' => 'Cukur Aktif']);
+    $finishedService = accessService(['name' => 'Cukur Selesai']);
+    $cancelledService = accessService(['name' => 'Cukur Dibatalkan']);
+    $otherService = accessService(['name' => 'Cukur Orang Lain']);
+    $capster = accessCapster(['name' => 'Rudi']);
+
+    $activeBooking = accessBooking($user, $activeService, $capster, [
+        'booking_code' => 'GAZ-HISTORY-ACTIVE',
+        'status' => 'PENDING',
+    ]);
+    $finishedBooking = accessBooking($user, $finishedService, $capster, [
+        'booking_code' => 'GAZ-HISTORY-DONE',
+        'status' => 'COMPLETED',
+    ]);
+    $cancelledBooking = accessBooking($user, $cancelledService, $capster, [
+        'booking_code' => 'GAZ-HISTORY-CANCELLED',
+        'status' => 'REJECTED',
+    ]);
+    $otherBooking = accessBooking($otherUser, $otherService, $capster, [
+        'booking_code' => 'GAZ-HISTORY-OTHER',
+        'status' => 'COMPLETED',
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('bookings.history'))
+        ->assertSuccessful()
+        ->assertSee('Riwayat Booking')
+        ->assertSee(route('bookings.index'), false)
+        ->assertSee($finishedBooking->booking_code)
+        ->assertSee('Cukur Selesai')
+        ->assertSee($cancelledBooking->booking_code)
+        ->assertSee('Cukur Dibatalkan')
+        ->assertDontSee($activeBooking->booking_code)
+        ->assertDontSee('Cukur Aktif')
+        ->assertDontSee($otherBooking->booking_code)
+        ->assertDontSee('Cukur Orang Lain');
 });
 
 test('admin cannot create a booking from booking form submission', function () {

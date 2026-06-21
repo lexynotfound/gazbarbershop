@@ -8,9 +8,9 @@
         <p class="mt-3 text-gaz-muted">Pantau booking aktif, riwayat, dan review dari satu tempat.</p>
     </div>
     <div class="grid gap-4 sm:grid-cols-3">
-        <x-stat-card label="Booking Aktif" value="2" icon="▣" />
-        <x-stat-card label="Selesai" value="8" icon="✓" />
-        <x-stat-card label="Review" value="7" icon="★" />
+        <x-stat-card label="Booking Aktif" :value="$activeBookingsCount" icon="B" />
+        <x-stat-card label="Selesai" :value="$finishedBookingsCount" icon="S" />
+        <x-stat-card label="Review" :value="$reviewsCount" icon="R" />
     </div>
 </div>
 @endsection

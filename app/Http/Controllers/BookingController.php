@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Capster;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Services\BookingAvailability;
 use Carbon\CarbonImmutable;
@@ -145,6 +146,13 @@ class BookingController extends Controller
                     'duration_minutes' => $service->duration_minutes,
                 ]);
             });
+
+            Payment::query()->create([
+                'booking_id' => $booking->id,
+                'amount' => $booking->grand_total,
+                'method' => 'cash',
+                'status' => 'unpaid',
+            ]);
 
             return $booking;
         });

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\PhoneNumberFormatter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -46,7 +47,14 @@ class CustomerController extends Controller
                 ->with('status', "Nomor WhatsApp {$user->name} belum tersedia.");
         }
 
-        $phone = preg_replace('/\D+/', '', $user->phone);
+        $phone = PhoneNumberFormatter::toIndonesianMobile($user->phone);
+
+        if (! PhoneNumberFormatter::isIndonesianMobile($phone)) {
+            return redirect()
+                ->route('admin.customers.index')
+                ->with('status', "Nomor WhatsApp {$user->name} belum valid.");
+        }
+
         $message = implode("\n", [
             "Halo {$user->name}, terima kasih sudah sering booking di GAZ Barbershop.",
             '',

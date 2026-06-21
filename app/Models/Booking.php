@@ -9,6 +9,36 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Booking extends Model
 {
+    /**
+     * @var array<int, string>
+     */
+    public const CHECK_IN_STATUSES = [
+        'ACCEPTED',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    public const COMPLETE_STATUSES = [
+        'CHECKED_IN',
+        'PAID',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    public const ACCEPT_STATUSES = [
+        'WAITING_CUSTOMER_CONFIRMATION',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
+    public const LATE_CANCELLABLE_STATUSES = [
+        'PENDING',
+        'ACCEPTED',
+    ];
+
     protected $fillable = [
         'booking_code',
         'user_id',

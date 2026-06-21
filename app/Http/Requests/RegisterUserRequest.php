@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\PhoneNumberFormatter;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -25,8 +26,30 @@ class RegisterUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'phone' => ['nullable', 'string', 'max:16', 'regex:/^628[0-9]{8,12}$/'],
             'password' => ['required', 'string', 'min:8'],
+        ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'phone' => PhoneNumberFormatter::toIndonesianMobile($this->string('phone')->toString()),
+        ]);
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'phone.regex' => 'Nomor WhatsApp harus memakai nomor HP Indonesia yang valid, contoh 08123456789.',
         ];
     }
 }

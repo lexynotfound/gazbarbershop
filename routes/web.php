@@ -8,10 +8,12 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\ScheduleController as AdminScheduleController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
+use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\ProfileController as UserProfileController;
 use App\Http\Controllers\User\ReviewController as UserReviewController;
 use Illuminate\Support\Facades\Route;
@@ -30,10 +32,11 @@ Route::get('/booking/available-times', [BookingController::class, 'availableTime
 Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
 
 Route::middleware(['auth', 'user'])->group(function (): void {
-    Route::view('/dashboard', 'user.dashboard')->name('dashboard');
+    Route::get('/dashboard', UserDashboardController::class)->name('dashboard');
     Route::get('/profil', [UserProfileController::class, 'edit'])->name('profile');
     Route::patch('/profil', [UserProfileController::class, 'update'])->name('profile.update');
     Route::get('/booking-saya', [UserBookingController::class, 'index'])->name('bookings.index');
+    Route::get('/riwayat-booking', [UserBookingController::class, 'history'])->name('bookings.history');
     Route::get('/booking/review', [UserReviewController::class, 'index'])->name('booking.review');
     Route::post('/booking/review', [UserReviewController::class, 'store'])->name('booking.review.store');
     Route::get('/booking/{booking}', [UserBookingController::class, 'show'])->name('booking.show');
@@ -46,7 +49,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])->name('bookings.show');
     Route::get('/bookings/{booking}/whatsapp-confirmation', [AdminBookingController::class, 'whatsappConfirmation'])->name('bookings.whatsapp');
     Route::patch('/bookings/{booking}/confirm', [AdminBookingController::class, 'confirm'])->name('bookings.confirm');
+    Route::patch('/bookings/{booking}/accept', [AdminBookingController::class, 'accept'])->name('bookings.accept');
+    Route::patch('/bookings/{booking}/check-in', [AdminBookingController::class, 'checkIn'])->name('bookings.check-in');
+    Route::patch('/bookings/{booking}/complete', [AdminBookingController::class, 'complete'])->name('bookings.complete');
+    Route::patch('/bookings/{booking}/payment/paid', [AdminBookingController::class, 'markPaid'])->name('bookings.payment.paid');
     Route::patch('/bookings/{booking}/cancel', [AdminBookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
+    Route::get('/transactions/export/csv', [AdminTransactionController::class, 'exportCsv'])->name('transactions.export.csv');
+    Route::get('/transactions/export/pdf', [AdminTransactionController::class, 'exportPdf'])->name('transactions.export.pdf');
     Route::get('/capsters', [AdminCapsterController::class, 'index'])->name('capsters.index');
     Route::get('/capsters/create', [AdminCapsterController::class, 'create'])->name('capsters.create');
     Route::post('/capsters', [AdminCapsterController::class, 'store'])->name('capsters.store');

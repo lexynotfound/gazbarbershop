@@ -52,7 +52,7 @@ test('user can update profile bio data', function () {
         ->patch(route('profile.update'), [
             'name' => 'Member Baru',
             'email' => 'baru@example.com',
-            'phone' => '628222222222',
+            'phone' => '+62 822-222-2222',
         ])
         ->assertRedirect(route('profile'))
         ->assertSessionHas('status', 'Profil berhasil diperbarui.');

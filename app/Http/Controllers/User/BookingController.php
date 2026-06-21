@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -51,16 +52,35 @@ class BookingController extends Controller
 
     public function index(): View
     {
-        $bookings = Booking::query()
-            ->with(['capster', 'items.service', 'review'])
-            ->whereBelongsTo(Auth::user())
-            ->latest('booking_start')
-            ->get();
-
         return view('user.bookings.index', [
-            'upcomingBookings' => $bookings->whereIn('status', self::UPCOMING_STATUSES)->values(),
+            'upcomingBookings' => $this->bookingsForStatuses(self::UPCOMING_STATUSES),
+        ]);
+    }
+
+    public function history(): View
+    {
+        $bookings = $this->bookingsForStatuses([
+            ...self::FINISHED_STATUSES,
+            ...self::CANCELLED_STATUSES,
+        ]);
+
+        return view('user.bookings.history', [
             'finishedBookings' => $bookings->whereIn('status', self::FINISHED_STATUSES)->values(),
             'cancelledBookings' => $bookings->whereIn('status', self::CANCELLED_STATUSES)->values(),
         ]);
+    }
+
+    /**
+     * @param  array<int, string>  $statuses
+     * @return Collection<int, Booking>
+     */
+    private function bookingsForStatuses(array $statuses): Collection
+    {
+        return Booking::query()
+            ->with(['capster', 'items.service', 'review'])
+            ->whereBelongsTo(Auth::user())
+            ->whereIn('status', $statuses)
+            ->latest('booking_start')
+            ->get();
     }
 }

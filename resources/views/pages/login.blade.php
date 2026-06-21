@@ -17,7 +17,7 @@
 
         <div class="mt-6 grid gap-4">
             <div><x-input-label>Email</x-input-label><x-text-input name="email" type="email" value="{{ old('email') }}" placeholder="user@gazbarbershop.com" required /></div>
-            <div><x-input-label>Password</x-input-label><x-text-input name="password" type="password" placeholder="password" required /></div>
+            <div><x-input-label for="password">Password</x-input-label><x-password-input id="password" name="password" placeholder="password" required /></div>
             <x-primary-button type="submit" class="w-full">Masuk</x-primary-button>
             <a href="{{ route('register') }}" class="text-center text-sm font-bold text-gaz-gold">Buat akun baru</a>
         </div>

@@ -47,7 +47,7 @@
 
         <div>
             <x-input-label for="phone">WhatsApp</x-input-label>
-            <x-text-input id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="628..." />
+            <x-text-input id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="08123456789" />
             @error('phone')<p class="mt-2 text-sm font-bold text-red-300">{{ $message }}</p>@enderror
         </div>
 

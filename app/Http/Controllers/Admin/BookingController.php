@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Services\PhoneNumberFormatter;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BookingController extends Controller
@@ -12,7 +15,7 @@ class BookingController extends Controller
     public function index(): View
     {
         $bookings = Booking::query()
-            ->with(['user', 'capster', 'items.service'])
+            ->with(['user', 'capster', 'items.service', 'payment'])
             ->latest('booking_start')
             ->get();
 
@@ -21,7 +24,7 @@ class BookingController extends Controller
 
     public function show(Booking $booking): View
     {
-        $booking->load(['user', 'capster', 'items.service']);
+        $booking->load(['user', 'capster', 'items.service', 'payment']);
 
         return view('admin.bookings.show', compact('booking'));
     }
@@ -48,9 +51,12 @@ class BookingController extends Controller
             'Terima kasih.',
         ]);
 
-        $whatsappUrl = 'https://wa.me/'.$booking->user->phone.'?text='.urlencode($message);
+        $whatsappPhone = PhoneNumberFormatter::toIndonesianMobile($booking->user->phone);
+        $whatsappUrl = PhoneNumberFormatter::isIndonesianMobile($whatsappPhone)
+            ? 'https://wa.me/'.$whatsappPhone.'?text='.urlencode($message)
+            : null;
 
-        return view('admin.bookings.whatsapp-confirmation', compact('booking', 'message', 'whatsappUrl'));
+        return view('admin.bookings.whatsapp-confirmation', compact('booking', 'message', 'whatsappPhone', 'whatsappUrl'));
     }
 
     public function confirm(Booking $booking): RedirectResponse
@@ -63,7 +69,94 @@ class BookingController extends Controller
 
         return redirect()
             ->route('admin.bookings.index')
-            ->with('status', "Booking {$booking->booking_code} ditandai sudah dikonfirmasi.");
+            ->with('status', "Booking {$booking->booking_code} ditandai WA terkirim.");
+    }
+
+    public function accept(Booking $booking): RedirectResponse
+    {
+        if (! in_array($booking->status, Booking::ACCEPT_STATUSES, true)) {
+            return redirect()
+                ->route('admin.bookings.show', $booking)
+                ->with('status', "Booking {$booking->booking_code} tidak bisa ditandai jadi datang.");
+        }
+
+        $booking->update([
+            'status' => 'ACCEPTED',
+            'customer_response_deadline' => null,
+        ]);
+
+        return redirect()
+            ->route('admin.bookings.show', $booking)
+            ->with('status', "Booking {$booking->booking_code} ditandai user jadi datang.");
+    }
+
+    public function checkIn(Booking $booking): RedirectResponse
+    {
+        if (! in_array($booking->status, Booking::CHECK_IN_STATUSES, true)) {
+            return redirect()
+                ->route('admin.bookings.show', $booking)
+                ->with('status', "Booking {$booking->booking_code} tidak bisa di-check-in.");
+        }
+
+        $booking->update([
+            'status' => 'CHECKED_IN',
+            'checked_in_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.bookings.show', $booking)
+            ->with('status', "Booking {$booking->booking_code} berhasil di-check-in.");
+    }
+
+    public function complete(Booking $booking): RedirectResponse
+    {
+        if (! in_array($booking->status, Booking::COMPLETE_STATUSES, true)) {
+            return redirect()
+                ->route('admin.bookings.show', $booking)
+                ->with('status', "Booking {$booking->booking_code} tidak bisa diselesaikan.");
+        }
+
+        $booking->update([
+            'status' => 'COMPLETED',
+            'completed_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.bookings.show', $booking)
+            ->with('status', "Booking {$booking->booking_code} selesai dan sudah bisa direview user.");
+    }
+
+    public function markPaid(Request $request, Booking $booking): RedirectResponse
+    {
+        $validated = $request->validate([
+            'method' => ['required', Rule::in(['cash', 'qris', 'transfer'])],
+        ]);
+
+        $payment = $booking->payment()->firstOrCreate(
+            ['booking_id' => $booking->id],
+            [
+                'amount' => $booking->grand_total,
+                'method' => $validated['method'],
+                'status' => 'unpaid',
+            ],
+        );
+
+        if ($payment->status === 'paid') {
+            return redirect()
+                ->route('admin.bookings.show', $booking)
+                ->with('status', "Transaksi {$booking->booking_code} sudah lunas.");
+        }
+
+        $payment->update([
+            'amount' => $booking->grand_total,
+            'method' => $validated['method'],
+            'status' => 'paid',
+            'paid_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('admin.bookings.show', $booking)
+            ->with('status', "Transaksi {$booking->booking_code} ditandai lunas.");
     }
 
     public function cancel(Booking $booking): RedirectResponse

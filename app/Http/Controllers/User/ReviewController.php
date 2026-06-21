@@ -28,9 +28,17 @@ class ReviewController extends Controller
 
         $selectedBooking = $reviewableBookings->firstWhere('id', $request->integer('booking'));
 
+        /** @var Collection<int, Review> $submittedReviews */
+        $submittedReviews = Review::query()
+            ->with(['booking.items.service', 'capster'])
+            ->whereBelongsTo($request->user())
+            ->latest()
+            ->get();
+
         return view('user.bookings.review', [
             'reviewableBookings' => $reviewableBookings,
             'selectedBooking' => $selectedBooking,
+            'submittedReviews' => $submittedReviews,
         ]);
     }
 

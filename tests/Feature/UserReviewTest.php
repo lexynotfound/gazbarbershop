@@ -81,11 +81,13 @@ test('user can choose only completed unreviewed bookings on review page', functi
         ->get(route('booking.review'))
         ->assertSuccessful()
         ->assertSee('Pilih Booking untuk Direview')
+        ->assertSee('Review yang Sudah Dikirim')
         ->assertSee($reviewableBooking->booking_code)
         ->assertSee(route('booking.review', ['booking' => $reviewableBooking->id]), false)
+        ->assertSee($reviewedBooking->booking_code)
+        ->assertSee('Sudah direview.')
         ->assertDontSee($pendingBooking->booking_code)
-        ->assertDontSee($otherBooking->booking_code)
-        ->assertDontSee($reviewedBooking->booking_code);
+        ->assertDontSee($otherBooking->booking_code);
 });
 
 test('user can submit a review for their completed booking', function () {

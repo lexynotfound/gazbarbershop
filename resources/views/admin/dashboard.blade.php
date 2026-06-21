@@ -56,7 +56,7 @@
                             <form method="POST" action="{{ route('admin.bookings.confirm', $booking) }}">
                                 @csrf
                                 @method('PATCH')
-                                <x-secondary-button type="submit">Konfirmasi</x-secondary-button>
+                                <x-secondary-button type="submit">Tandai WA Terkirim</x-secondary-button>
                             </form>
                             <x-primary-button href="{{ route('admin.bookings.whatsapp', $booking) }}">WhatsApp</x-primary-button>
                         </div>

@@ -18,8 +18,8 @@
         <div class="mt-6 grid gap-4">
             <div><x-input-label>Nama</x-input-label><x-text-input name="name" value="{{ old('name') }}" placeholder="Nama lengkap" required /></div>
             <div><x-input-label>Email</x-input-label><x-text-input name="email" type="email" value="{{ old('email') }}" placeholder="email@example.com" required /></div>
-            <div><x-input-label>WhatsApp</x-input-label><x-text-input name="phone" value="{{ old('phone') }}" placeholder="628..." /></div>
-            <div><x-input-label>Password</x-input-label><x-text-input name="password" type="password" required /></div>
+            <div><x-input-label>WhatsApp</x-input-label><x-text-input name="phone" value="{{ old('phone') }}" placeholder="08123456789" /></div>
+            <div><x-input-label for="password">Password</x-input-label><x-password-input id="password" name="password" required /></div>
             <x-primary-button type="submit" class="w-full">Daftar</x-primary-button>
         </div>
     </form>

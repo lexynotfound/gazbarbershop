@@ -1,13 +1,14 @@
 @php
     $items = [
-        ['Dashboard', 'admin.dashboard', '▦'],
-        ['Booking', 'admin.bookings.index', '▣'],
-        ['Capster', 'admin.capsters.index', '♙'],
-        ['Layanan', 'admin.services.index', '✂'],
-        ['Jadwal Capster', 'admin.schedules.index', '◷'],
+        ['Dashboard', 'admin.dashboard', 'D'],
+        ['Booking', 'admin.bookings.index', 'B'],
+        ['Capster', 'admin.capsters.index', 'C'],
+        ['Layanan', 'admin.services.index', 'L'],
+        ['Jadwal Capster', 'admin.schedules.index', 'J'],
         ['Pelanggan', 'admin.customers.index', 'P'],
-        ['Review', 'admin.reviews.index', '★'],
-        ['Pengaturan', 'admin.dashboard', '⚙'],
+        ['Transaksi', 'admin.transactions.index', 'Rp'],
+        ['Review', 'admin.reviews.index', 'R'],
+        ['Pengaturan', 'admin.dashboard', 'S'],
     ];
 @endphp
 
@@ -22,7 +23,7 @@
         <form method="POST" action="{{ route('logout') }}">
             @csrf
             <button type="submit" class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-gaz-muted transition hover:bg-white/5 hover:text-white">
-                <span class="w-5 text-center">↩</span>Logout
+                <span class="w-5 text-center">Out</span>Logout
             </button>
         </form>
     </nav>
