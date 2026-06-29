@@ -150,6 +150,66 @@ class DatabaseSeeder extends Seeder
             );
         }
 
+        $reviewUsers = collect([
+            ['name' => 'Deni Pratama', 'email' => 'deni@gazbarbershop.com', 'phone' => '6281234561001'],
+            ['name' => 'Aiman Hakim', 'email' => 'aiman@gazbarbershop.com', 'phone' => '6281234561002'],
+            ['name' => 'Satria Wibowo', 'email' => 'satria@gazbarbershop.com', 'phone' => '6281234561003'],
+            ['name' => 'Ferdi Nugroho', 'email' => 'ferdi@gazbarbershop.com', 'phone' => '6281234561004'],
+            ['name' => 'Gilang Ramadhan', 'email' => 'gilang@gazbarbershop.com', 'phone' => '6281234561005'],
+        ])->map(fn (array $data): User => User::query()->updateOrCreate(
+            ['email' => $data['email']],
+            $data + ['role' => 'user', 'password' => Hash::make('password')],
+        ));
+
+        $reviewData = [
+            ['capster' => 0, 'user' => 0, 'code' => 'GAZ-REV-R01', 'rating' => 5, 'comment' => 'Rudi tangan emas! Fade-nya presisi banget, hasilnya persis seperti referensi yang saya tunjukkan.', 'daysAgo' => 3],
+            ['capster' => 0, 'user' => 1, 'code' => 'GAZ-REV-R02', 'rating' => 5, 'comment' => 'Sudah 3 kali ke sini, selalu puas. Rudi paham betul gaya yang cocok untuk bentuk muka saya.', 'daysAgo' => 8],
+            ['capster' => 0, 'user' => 2, 'code' => 'GAZ-REV-R03', 'rating' => 4, 'comment' => 'Hasil cukurnya rapi dan bersih. Cukup memuaskan untuk harganya.', 'daysAgo' => 15],
+            ['capster' => 1, 'user' => 0, 'code' => 'GAZ-REV-D01', 'rating' => 5, 'comment' => 'Dika kerjanya cepat tapi hasilnya tidak kalah rapi. Cocok buat yang mau potong di jam makan siang!', 'daysAgo' => 5],
+            ['capster' => 1, 'user' => 3, 'code' => 'GAZ-REV-D02', 'rating' => 4, 'comment' => 'Pelayanannya ramah, suasananya nyaman. Akan balik lagi bulan depan.', 'daysAgo' => 12],
+            ['capster' => 1, 'user' => 4, 'code' => 'GAZ-REV-D03', 'rating' => 5, 'comment' => 'Daily cut yang simpel tapi hasilnya sangat rapi. Dika juga kasih saran style yang pas.', 'daysAgo' => 20],
+            ['capster' => 2, 'user' => 1, 'code' => 'GAZ-REV-F01', 'rating' => 5, 'comment' => 'Jenggot saya sekarang terlihat jauh lebih terawat. Fahmi tahu betul cara shaping yang ideal.', 'daysAgo' => 6],
+            ['capster' => 2, 'user' => 2, 'code' => 'GAZ-REV-F02', 'rating' => 4, 'comment' => 'Classic cut dari Fahmi tidak mengecewakan. Potongannya timeless dan rapi.', 'daysAgo' => 18],
+            ['capster' => 3, 'user' => 3, 'code' => 'GAZ-REV-B01', 'rating' => 5, 'comment' => 'Bayu benar-benar senior level. Styling premium yang dia buat bikin percaya diri level naik drastis!', 'daysAgo' => 4],
+            ['capster' => 3, 'user' => 4, 'code' => 'GAZ-REV-B02', 'rating' => 5, 'comment' => 'Hasil styling Bayu sangat worth it. Teman-teman kantor langsung sadar ada yang berbeda.', 'daysAgo' => 10],
+            ['capster' => 3, 'user' => 0, 'code' => 'GAZ-REV-B03', 'rating' => 4, 'comment' => 'Kualitas premium memang terasa dari cara Bayu bekerja. Detail dan sabar menjelaskan opsi style.', 'daysAgo' => 22],
+        ];
+
+        foreach ($reviewData as $row) {
+            $capster = $capsters->get($row['capster']);
+            $user = $reviewUsers->get($row['user']);
+
+            $reviewedBooking = Booking::query()->updateOrCreate(
+                ['booking_code' => $row['code']],
+                [
+                    'user_id' => $user->id,
+                    'capster_id' => $capster->id,
+                    'booking_start' => now()->subDays($row['daysAgo'])->setTime(10, 0),
+                    'booking_end' => now()->subDays($row['daysAgo'])->setTime(10, 30),
+                    'service_total' => $services->first()->price,
+                    'capster_fee' => $capster->service_fee,
+                    'grand_total' => $services->first()->price + $capster->service_fee,
+                    'status' => 'REVIEWED',
+                    'completed_at' => now()->subDays($row['daysAgo'])->setTime(10, 30),
+                ],
+            );
+
+            BookingItem::query()->updateOrCreate(
+                ['booking_id' => $reviewedBooking->id, 'service_id' => $services->first()->id],
+                ['price' => $services->first()->price, 'duration_minutes' => $services->first()->duration_minutes],
+            );
+
+            Review::query()->updateOrCreate(
+                ['booking_id' => $reviewedBooking->id],
+                [
+                    'user_id' => $user->id,
+                    'capster_id' => $capster->id,
+                    'rating' => $row['rating'],
+                    'comment' => $row['comment'],
+                ],
+            );
+        }
+
         $admin->touch();
     }
 }

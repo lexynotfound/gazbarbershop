@@ -19,6 +19,7 @@ class PageController extends Controller
                 ->limit(3)
                 ->get()
                 ->map(fn (Capster $capster): array => [
+                    'id' => $capster->id,
                     'name' => $capster->name,
                     'photo' => $capster->photo,
                     'rating' => $capster->rating,
@@ -43,6 +44,7 @@ class PageController extends Controller
                 ->orderByDesc('rating')
                 ->get()
                 ->map(fn (Capster $capster): array => [
+                    'id' => $capster->id,
                     'name' => $capster->name,
                     'photo' => $capster->photo,
                     'rating' => $capster->rating,
@@ -50,6 +52,15 @@ class PageController extends Controller
                 ])
                 ->values(),
         ]);
+    }
+
+    public function showCapster(Capster $capster): View
+    {
+        abort_unless($capster->is_active, 404);
+
+        $reviews = $capster->reviews()->with('user')->latest()->get();
+
+        return view('pages.capster-show', compact('capster', 'reviews'));
     }
 
     /**

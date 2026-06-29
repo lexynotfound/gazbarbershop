@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PageController::class, 'home'])->name('home');
 Route::get('/layanan', [PageController::class, 'services'])->name('services');
 Route::get('/capster', [PageController::class, 'capsters'])->name('capsters');
+Route::get('/capster/{capster}', [PageController::class, 'showCapster'])->name('capster.show');
 Route::view('/login', 'pages.login')->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 Route::view('/register', 'pages.register')->name('register');
