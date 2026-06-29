@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Capster;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -153,6 +154,36 @@ test('capster index shows delete button for each capster', function () {
         ->get(route('admin.capsters.index'))
         ->assertSuccessful()
         ->assertSee(route('admin.capsters.destroy', $capster), false);
+});
+
+test('admin cannot delete a capster that has bookings', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create(['role' => 'user']);
+    $capster = Capster::query()->create([
+        'name' => 'Budi',
+        'rating' => 4.5,
+        'service_fee' => 40000,
+        'is_active' => true,
+        'description' => 'Capster dengan booking.',
+    ]);
+    Booking::query()->create([
+        'booking_code' => 'GAZ-TEST-DEL',
+        'user_id' => $customer->id,
+        'capster_id' => $capster->id,
+        'booking_start' => now()->addDay(),
+        'booking_end' => now()->addDay()->addHour(),
+        'service_total' => 50000,
+        'capster_fee' => 40000,
+        'grand_total' => 90000,
+        'status' => 'PENDING',
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.capsters.destroy', $capster))
+        ->assertRedirect(route('admin.capsters.index'))
+        ->assertSessionHas('error');
+
+    $this->assertDatabaseHas('capsters', ['id' => $capster->id]);
 });
 
 test('regular users cannot delete capsters', function () {
