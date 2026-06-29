@@ -98,6 +98,80 @@ test('admin can update capster photo and cancel from edit form', function () {
     Storage::disk('public')->assertExists($capster->photo);
 });
 
+test('admin can delete a capster without photo', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $capster = Capster::query()->create([
+        'name' => 'Budi',
+        'rating' => 4.5,
+        'service_fee' => 40000,
+        'is_active' => true,
+        'description' => 'Capster biasa.',
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.capsters.destroy', $capster))
+        ->assertRedirect(route('admin.capsters.index'))
+        ->assertSessionHas('status', 'Capster berhasil dihapus.');
+
+    $this->assertDatabaseMissing('capsters', ['id' => $capster->id]);
+});
+
+test('admin can delete a capster with photo and the file is removed from storage', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $photo = 'capsters/budi.png';
+    Storage::disk('public')->put($photo, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='));
+    $capster = Capster::query()->create([
+        'name' => 'Budi',
+        'photo' => $photo,
+        'rating' => 4.5,
+        'service_fee' => 40000,
+        'is_active' => true,
+        'description' => 'Capster dengan foto.',
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.capsters.destroy', $capster))
+        ->assertRedirect(route('admin.capsters.index'));
+
+    $this->assertDatabaseMissing('capsters', ['id' => $capster->id]);
+    Storage::disk('public')->assertMissing($photo);
+});
+
+test('capster index shows delete button for each capster', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $capster = Capster::query()->create([
+        'name' => 'Andi',
+        'rating' => 4.7,
+        'service_fee' => 50000,
+        'is_active' => true,
+        'description' => 'Capster senior.',
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.capsters.index'))
+        ->assertSuccessful()
+        ->assertSee(route('admin.capsters.destroy', $capster), false);
+});
+
+test('regular users cannot delete capsters', function () {
+    $user = User::factory()->create(['role' => 'user']);
+    $capster = Capster::query()->create([
+        'name' => 'Budi',
+        'rating' => 4.5,
+        'service_fee' => 40000,
+        'is_active' => true,
+        'description' => 'Capster biasa.',
+    ]);
+
+    $this->actingAs($user)
+        ->delete(route('admin.capsters.destroy', $capster))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('capsters', ['id' => $capster->id]);
+});
+
 test('legacy capster edit url redirects to first capster edit page', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $capster = Capster::query()->create([

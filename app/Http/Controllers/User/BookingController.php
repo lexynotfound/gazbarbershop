@@ -17,7 +17,7 @@ class BookingController extends Controller
         'PENDING',
         'WAITING_CUSTOMER_CONFIRMATION',
         'WAITING_PAYMENT',
-        'ACCEPTED',
+        'CONFIRMED',
         'CHECKED_IN',
         'IN_PROGRESS',
         'PAID',

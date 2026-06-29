@@ -64,4 +64,17 @@ class ServiceController extends Controller
             ->route('admin.services.index')
             ->with('status', 'Layanan berhasil diperbarui.');
     }
+
+    public function destroy(Service $service): RedirectResponse
+    {
+        if ($service->image) {
+            Storage::disk('public')->delete($service->image);
+        }
+
+        $service->delete();
+
+        return redirect()
+            ->route('admin.services.index')
+            ->with('status', 'Layanan berhasil dihapus.');
+    }
 }

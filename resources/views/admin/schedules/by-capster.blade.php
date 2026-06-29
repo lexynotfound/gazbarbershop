@@ -14,17 +14,25 @@
 
         <div class="mt-5 grid gap-3">
             @forelse ($schedules as $schedule)
-                <a href="{{ route('admin.schedules.show', $schedule) }}" class="block rounded-2xl border border-gaz-border bg-black/25 p-4 transition hover:border-gaz-gold/60 hover:bg-gaz-gold/10 focus:outline-none focus:ring-2 focus:ring-gaz-gold/40">
+                <div class="rounded-2xl border border-gaz-border bg-black/25 p-4">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
+                        <a href="{{ route('admin.schedules.show', $schedule) }}" class="flex-1 transition hover:text-gaz-gold focus:outline-none">
                             <p class="font-black">{{ $schedule->work_date->translatedFormat('d F Y') }}</p>
                             <p class="text-sm text-gaz-muted">{{ str($schedule->start_time)->substr(0, 5) }} - {{ str($schedule->end_time)->substr(0, 5) }}</p>
+                        </a>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-sm font-bold {{ $schedule->is_available ? 'text-gaz-gold' : 'text-red-300' }}">
+                                {{ $schedule->is_available ? 'Tersedia' : 'Tidak Tersedia' }}
+                            </span>
+                            <form method="POST" action="{{ route('admin.schedules.destroy', $schedule) }}"
+                                  onsubmit="return confirm('Hapus jadwal ini?')">
+                                @csrf
+                                @method('DELETE')
+                                <x-danger-button type="submit">Hapus</x-danger-button>
+                            </form>
                         </div>
-                        <span class="text-sm font-bold {{ $schedule->is_available ? 'text-gaz-gold' : 'text-red-300' }}">
-                            {{ $schedule->is_available ? 'Tersedia' : 'Tidak Tersedia' }}
-                        </span>
                     </div>
-                </a>
+                </div>
             @empty
                 <div class="rounded-2xl border border-dashed border-gaz-border bg-black/20 p-5 text-sm text-gaz-muted">Belum ada jadwal untuk capster ini.</div>
             @endforelse

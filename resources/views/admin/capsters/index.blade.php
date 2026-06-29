@@ -40,6 +40,12 @@
                         <td class="px-4 py-4">
                             <div class="flex flex-wrap gap-2">
                                 <x-secondary-button href="{{ route('admin.capsters.edit', $capster) }}">Edit</x-secondary-button>
+                                <form method="POST" action="{{ route('admin.capsters.destroy', $capster) }}"
+                                      onsubmit="return confirm('Hapus capster {{ $capster->name }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-danger-button type="submit">Hapus</x-danger-button>
+                                </form>
                             </div>
                         </td>
                     </tr>

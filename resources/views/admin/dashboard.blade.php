@@ -84,7 +84,7 @@
             </form>
         </div>
 
-        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             <x-stat-card
                 label="Pelanggan Aktif"
                 :value="$crmReport['activeCustomersCount']"
@@ -95,6 +95,12 @@
                 label="Repeat Order"
                 :value="$crmReport['repeatCustomersCount']"
                 icon="RO"
+                description="Tepat 2 booking selesai"
+            />
+            <x-stat-card
+                label="Pelanggan Loyal"
+                :value="$crmReport['loyalCustomersCount']"
+                icon="PL"
                 description="Minimal 3 booking selesai"
             />
             <x-stat-card
@@ -132,7 +138,7 @@
                                     <td class="px-3 py-3 font-bold">{{ $customer['name'] }}</td>
                                     <td class="px-3 py-3 text-center font-black text-gaz-gold">{{ $customer['completedBookingsCount'] }}</td>
                                     <td class="px-3 py-3">
-                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold {{ $customer['status'] === 'Repeat' ? 'border-gaz-gold/30 bg-gaz-gold/10 text-gaz-gold' : 'border-white/15 bg-white/5 text-white' }}">
+                                        <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold {{ $customer['status'] === 'Loyal' ? 'border-gaz-gold/30 bg-gaz-gold/10 text-gaz-gold' : ($customer['status'] === 'Repeat' ? 'border-blue-400/30 bg-blue-400/10 text-blue-200' : 'border-white/15 bg-white/5 text-white') }}">
                                             {{ $customer['status'] }}
                                         </span>
                                     </td>

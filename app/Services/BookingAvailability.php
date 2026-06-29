@@ -18,7 +18,7 @@ class BookingAvailability
         'PENDING',
         'WAITING_CUSTOMER_CONFIRMATION',
         'WAITING_PAYMENT',
-        'ACCEPTED',
+        'CONFIRMED',
         'CHECKED_IN',
         'IN_PROGRESS',
         'PAID',
@@ -114,8 +114,7 @@ class BookingAvailability
 
         while ($cursor->addMinutes($durationMinutes)->lessThanOrEqualTo($scheduleEnd)) {
             $slotEnd = $cursor->addMinutes($durationMinutes);
-            $slotWindowEnd = $cursor->addMinutes(self::SLOT_INTERVAL_MINUTES);
-            $booking = $bookings->first(fn (Booking $booking): bool => $booking->booking_start->greaterThanOrEqualTo($cursor) && $booking->booking_start->lessThan($slotWindowEnd));
+            $booking = $bookings->first(fn (Booking $booking): bool => $booking->booking_start->lessThan($slotEnd) && $booking->booking_end->greaterThan($cursor));
 
             $slots[] = [
                 'time' => $cursor->format('H:i'),

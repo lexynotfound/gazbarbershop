@@ -81,7 +81,7 @@ class BookingController extends Controller
         }
 
         $booking->update([
-            'status' => 'ACCEPTED',
+            'status' => 'CONFIRMED',
             'customer_response_deadline' => null,
         ]);
 
@@ -161,10 +161,10 @@ class BookingController extends Controller
 
     public function cancel(Booking $booking): RedirectResponse
     {
-        $booking->update(['status' => 'REJECTED']);
+        $booking->update(['status' => 'CANCELLED']);
 
         return redirect()
             ->route('admin.bookings.index')
-            ->with('status', "Booking {$booking->booking_code} ditolak.");
+            ->with('status', "Booking {$booking->booking_code} dibatalkan.");
     }
 }

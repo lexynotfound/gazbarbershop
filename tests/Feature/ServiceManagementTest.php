@@ -159,6 +159,80 @@ test('home page shows database images for services and capsters with fallbacks',
         ->assertSee('T');
 });
 
+test('admin can delete a service without image', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $service = Service::query()->create([
+        'name' => 'Cukur Biasa',
+        'description' => 'Potongan standard.',
+        'price' => 35000,
+        'duration_minutes' => 30,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.services.destroy', $service))
+        ->assertRedirect(route('admin.services.index'))
+        ->assertSessionHas('status', 'Layanan berhasil dihapus.');
+
+    $this->assertDatabaseMissing('services', ['id' => $service->id]);
+});
+
+test('admin can delete a service with image and the file is removed from storage', function () {
+    Storage::fake('public');
+
+    $admin = User::factory()->create(['role' => 'admin']);
+    $image = 'services/cukur.png';
+    Storage::disk('public')->put($image, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='));
+    $service = Service::query()->create([
+        'name' => 'Cukur Bergambar',
+        'description' => 'Punya gambar.',
+        'image' => $image,
+        'price' => 40000,
+        'duration_minutes' => 30,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.services.destroy', $service))
+        ->assertRedirect(route('admin.services.index'));
+
+    $this->assertDatabaseMissing('services', ['id' => $service->id]);
+    Storage::disk('public')->assertMissing($image);
+});
+
+test('services index shows delete button for each service', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $service = Service::query()->create([
+        'name' => 'Hair Styling',
+        'description' => 'Penataan rambut.',
+        'price' => 60000,
+        'duration_minutes' => 45,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->get(route('admin.services.index'))
+        ->assertSuccessful()
+        ->assertSee(route('admin.services.destroy', $service), false);
+});
+
+test('regular users cannot delete services', function () {
+    $user = User::factory()->create(['role' => 'user']);
+    $service = Service::query()->create([
+        'name' => 'Cukur Biasa',
+        'description' => 'Potongan standard.',
+        'price' => 35000,
+        'duration_minutes' => 30,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($user)
+        ->delete(route('admin.services.destroy', $service))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('services', ['id' => $service->id]);
+});
+
 test('capster page shows active database photos with initial fallback', function () {
     Capster::query()->create([
         'name' => 'Rafi',

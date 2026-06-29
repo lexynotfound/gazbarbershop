@@ -13,12 +13,15 @@ use Illuminate\Database\Eloquent\Builder;
 
 class CrmDashboardReport
 {
+    public function __construct(private CustomerSegmentation $segmentation) {}
+
     /**
      * @return array{
      *     month: string,
      *     periodLabel: string,
      *     activeCustomersCount: int,
      *     repeatCustomersCount: int,
+     *     loyalCustomersCount: int,
      *     customers: array<int, array{name: string, completedBookingsCount: int, periodBookingsCount: int, status: string, description: string}>,
      *     services: array<int, array{name: string, transactionCount: int}>,
      *     serviceMaxTransactions: int,
@@ -35,7 +38,17 @@ class CrmDashboardReport
         $periodLabel = $periodStart->translatedFormat('F Y');
 
         $activeCustomersCount = $this->activeCustomerIds($periodStart, $periodEnd)->count('user_id');
-        $repeatCustomersCount = $this->repeatCustomersCount($periodStart, $periodEnd);
+        $repeatCustomersCount = $this->segmentedCustomersCount(
+            $periodStart,
+            $periodEnd,
+            CustomerSegmentation::REPEAT_ORDER_THRESHOLD,
+            CustomerSegmentation::LOYAL_CUSTOMER_THRESHOLD,
+        );
+        $loyalCustomersCount = $this->segmentedCustomersCount(
+            $periodStart,
+            $periodEnd,
+            CustomerSegmentation::LOYAL_CUSTOMER_THRESHOLD,
+        );
         $customers = $this->customers($periodStart, $periodEnd);
         $services = $this->services($periodStart, $periodEnd);
         $capsters = $this->capsters($periodStart, $periodEnd);
@@ -47,6 +60,7 @@ class CrmDashboardReport
             'periodLabel' => $periodLabel,
             'activeCustomersCount' => $activeCustomersCount,
             'repeatCustomersCount' => $repeatCustomersCount,
+            'loyalCustomersCount' => $loyalCustomersCount,
             'customers' => $customers,
             'services' => $services,
             'serviceMaxTransactions' => collect($services)->max('transactionCount') ?? 0,
@@ -57,6 +71,7 @@ class CrmDashboardReport
                 $periodLabel,
                 $activeCustomersCount,
                 $repeatCustomersCount,
+                $loyalCustomersCount,
                 $favoriteService,
                 $favoriteCapster,
             ),
@@ -85,15 +100,20 @@ class CrmDashboardReport
             ->distinct();
     }
 
-    private function repeatCustomersCount(CarbonImmutable $periodStart, CarbonImmutable $periodEnd): int
-    {
+    private function segmentedCustomersCount(
+        CarbonImmutable $periodStart,
+        CarbonImmutable $periodEnd,
+        int $minimumBookings,
+        ?int $maximumBookings = null,
+    ): int {
         return Booking::query()
             ->select('user_id')
             ->whereIn('status', Booking::FINISHED_STATUSES)
             ->where('booking_start', '<=', $periodEnd)
             ->whereIn('user_id', $this->activeCustomerIds($periodStart, $periodEnd))
             ->groupBy('user_id')
-            ->havingRaw('COUNT(*) >= ?', [3])
+            ->havingRaw('COUNT(*) >= ?', [$minimumBookings])
+            ->when($maximumBookings !== null, fn (Builder $query): Builder => $query->havingRaw('COUNT(*) < ?', [$maximumBookings]))
             ->get()
             ->count();
     }
@@ -122,16 +142,18 @@ class CrmDashboardReport
             ->map(function (User $customer): array {
                 $completedBookingsCount = (int) $customer->completed_bookings_count;
                 $periodBookingsCount = (int) $customer->period_bookings_count;
-                $isRepeatCustomer = $completedBookingsCount >= 3;
+                $segment = $this->segmentation->segment($completedBookingsCount);
 
                 return [
                     'name' => $customer->name,
                     'completedBookingsCount' => $completedBookingsCount,
                     'periodBookingsCount' => $periodBookingsCount,
-                    'status' => $isRepeatCustomer ? 'Repeat' : 'Aktif',
-                    'description' => $isRepeatCustomer
-                        ? 'Pelanggan loyal'
-                        : ($completedBookingsCount === 1 ? 'Pelanggan baru' : 'Aktif bulan ini'),
+                    'status' => $segment,
+                    'description' => match ($segment) {
+                        'Loyal' => 'Pelanggan loyal',
+                        'Repeat' => 'Datang kembali',
+                        default => 'Pelanggan baru',
+                    },
                 ];
             })
             ->all();
@@ -211,6 +233,7 @@ class CrmDashboardReport
         string $periodLabel,
         int $activeCustomersCount,
         int $repeatCustomersCount,
+        int $loyalCustomersCount,
         ?array $favoriteService,
         ?array $favoriteCapster,
     ): array {
@@ -229,7 +252,8 @@ class CrmDashboardReport
 
         return [
             "{$activeCustomersCount} pelanggan aktif melakukan layanan pada {$periodLabel}.",
-            "{$repeatCustomersCount} pelanggan repeat order (minimal 3 booking selesai) aktif kembali.",
+            "{$repeatCustomersCount} pelanggan repeat order dengan 2 booking selesai aktif kembali.",
+            "{$loyalCustomersCount} pelanggan loyal dengan minimal 3 booking selesai aktif kembali.",
             $serviceNote,
             $capsterNote,
         ];

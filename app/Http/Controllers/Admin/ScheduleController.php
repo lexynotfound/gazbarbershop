@@ -113,4 +113,14 @@ class ScheduleController extends Controller
             ->route('admin.schedules.show', $schedule)
             ->with('status', 'Jadwal capster berhasil diperbarui.');
     }
+
+    public function destroy(CapsterSchedule $schedule): RedirectResponse
+    {
+        $capsterId = $schedule->capster_id;
+        $schedule->delete();
+
+        return redirect()
+            ->route('admin.schedules.by-capster', $capsterId)
+            ->with('status', 'Jadwal capster berhasil dihapus.');
+    }
 }

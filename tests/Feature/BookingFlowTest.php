@@ -45,8 +45,8 @@ function activeCapster(array $attributes = []): Capster
     CapsterSchedule::query()->create([
         'capster_id' => $capster->id,
         'work_date' => now()->addDay()->toDateString(),
-        'start_time' => '08:00:00',
-        'end_time' => '18:00:00',
+        'start_time' => '10:00:00',
+        'end_time' => '22:00:00',
         'is_available' => true,
     ]);
 
@@ -356,7 +356,7 @@ test('admin can mark a whatsapp-confirmed user as accepted', function () {
 
     $booking->refresh();
 
-    expect($booking->status)->toBe('ACCEPTED')
+    expect($booking->status)->toBe('CONFIRMED')
         ->and($booking->customer_response_deadline)->toBeNull();
 });
 
@@ -366,7 +366,7 @@ test('admin can check in an active booking', function () {
     $service = activeService();
     $capster = activeCapster();
     $booking = pendingBooking($customer, $service, $capster, [
-        'status' => 'ACCEPTED',
+        'status' => 'CONFIRMED',
     ]);
 
     $this->actingAs($admin)
@@ -506,7 +506,7 @@ test('admin can reject a booking from whatsapp confirmation action', function ()
         ->patch(route('admin.bookings.cancel', $booking))
         ->assertRedirect(route('admin.bookings.index'));
 
-    expect($booking->refresh()->status)->toBe('REJECTED');
+    expect($booking->refresh()->status)->toBe('CANCELLED');
 });
 
 test('late booking command cancels unconfirmed and late accepted bookings', function () {
@@ -516,7 +516,7 @@ test('late booking command cancels unconfirmed and late accepted bookings', func
     $lateBooking = pendingBooking($customer, $service, $capster, [
         'booking_start' => now()->subMinutes(16),
         'booking_end' => now()->addMinutes(14),
-        'status' => 'ACCEPTED',
+        'status' => 'CONFIRMED',
     ]);
     $pendingLateBooking = pendingBooking($customer, $service, $capster, [
         'booking_start' => now()->subMinutes(17),
@@ -532,7 +532,7 @@ test('late booking command cancels unconfirmed and late accepted bookings', func
     $recentBooking = pendingBooking($customer, $service, $capster, [
         'booking_start' => now()->subMinutes(14),
         'booking_end' => now()->addMinutes(16),
-        'status' => 'ACCEPTED',
+        'status' => 'CONFIRMED',
     ]);
     $checkedInBooking = pendingBooking($customer, $service, $capster, [
         'booking_start' => now()->subMinutes(20),
@@ -554,7 +554,7 @@ test('late booking command cancels unconfirmed and late accepted bookings', func
     expect($lateBooking->refresh()->status)->toBe('LATE_CANCELLED')
         ->and($pendingLateBooking->refresh()->status)->toBe('LATE_CANCELLED')
         ->and($unconfirmedBooking->refresh()->status)->toBe('AUTO_CANCELLED')
-        ->and($recentBooking->refresh()->status)->toBe('ACCEPTED')
+        ->and($recentBooking->refresh()->status)->toBe('CONFIRMED')
         ->and($checkedInBooking->refresh()->status)->toBe('CHECKED_IN')
         ->and($completedBooking->refresh()->status)->toBe('COMPLETED');
 });
@@ -613,4 +613,34 @@ test('completed booking does not block the same slot', function () {
         ->assertRedirect(route('bookings.index'));
 
     expect(Booking::query()->count())->toBe(2);
+});
+
+test('booking duration blocks every overlapping slot', function () {
+    $longService = activeService(['duration_minutes' => 90]);
+    $shortService = activeService(['name' => 'Rapikan Rambut', 'duration_minutes' => 30]);
+    $capster = activeCapster();
+    $customer = User::factory()->create();
+    pendingBooking($customer, $longService, $capster, [
+        'booking_start' => now()->addDay()->setTime(10, 0),
+        'booking_end' => now()->addDay()->setTime(11, 30),
+    ]);
+
+    $response = $this->getJson(route('booking.available-times', [
+        'capster_id' => $capster->id,
+        'booking_date' => now()->addDay()->toDateString(),
+        'duration_minutes' => $shortService->duration_minutes,
+    ]));
+
+    $response->assertSuccessful();
+
+    expect(collect($response->json('slots'))->firstWhere('time', '11:00')['available'])->toBeFalse();
+
+    $this->actingAs(User::factory()->create())
+        ->post(route('booking.store'), [
+            ...bookingPayload($shortService, $capster),
+            'booking_time' => '11:00',
+        ])
+        ->assertSessionHasErrors('booking_time');
+
+    expect(Booking::query()->count())->toBe(1);
 });

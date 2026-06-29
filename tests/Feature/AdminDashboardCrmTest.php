@@ -106,7 +106,8 @@ test('crm report counts active and repeat customers from completed and reviewed 
     crmBooking($repeatCustomer, $service, $capster, 'COMPLETED', now()->subMonth());
     crmBooking($repeatCustomer, $service, $capster, 'REVIEWED', now()->startOfMonth()->addDays(2), 5);
     crmBooking($activeCustomer, $service, $capster, 'COMPLETED', now()->startOfMonth()->addDays(3));
-    crmBooking($excludedCustomer, $service, $capster, 'REJECTED', now()->startOfMonth()->addDays(4));
+    crmBooking($activeCustomer, $service, $capster, 'COMPLETED', now()->startOfMonth()->addDays(4));
+    crmBooking($excludedCustomer, $service, $capster, 'CANCELLED', now()->startOfMonth()->addDays(5));
 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
@@ -114,17 +115,20 @@ test('crm report counts active and repeat customers from completed and reviewed 
         ->assertViewHas('crmReport', function (array $report): bool {
             return $report['activeCustomersCount'] === 2
                 && $report['repeatCustomersCount'] === 1
-                && $report['favoriteService'] === ['name' => 'Haircut CRM', 'transactionCount' => 2]
-                && $report['favoriteCapster'] === ['name' => 'Rian CRM', 'bookingCount' => 2, 'averageRating' => 5.0]
+                && $report['loyalCustomersCount'] === 1
+                && $report['favoriteService'] === ['name' => 'Haircut CRM', 'transactionCount' => 3]
+                && $report['favoriteCapster'] === ['name' => 'Rian CRM', 'bookingCount' => 3, 'averageRating' => 5.0]
                 && $report['customers'][0]['name'] === 'Pelanggan Loyal CRM'
                 && $report['customers'][0]['completedBookingsCount'] === 3
-                && $report['customers'][0]['status'] === 'Repeat';
+                && $report['customers'][0]['status'] === 'Loyal'
+                && $report['customers'][1]['status'] === 'Repeat';
         })
         ->assertSee('Pelanggan Loyal CRM')
         ->assertSee('Pelanggan Aktif CRM')
         ->assertSee('Haircut CRM')
         ->assertSee('Rian CRM')
-        ->assertSee('1 pelanggan repeat order (minimal 3 booking selesai) aktif kembali.')
+        ->assertSee('1 pelanggan repeat order dengan 2 booking selesai aktif kembali.')
+        ->assertSee('1 pelanggan loyal dengan minimal 3 booking selesai aktif kembali.')
         ->assertDontSee('Pelanggan Ditolak CRM');
 });
 

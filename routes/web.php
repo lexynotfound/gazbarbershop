@@ -64,6 +64,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/capsters/edit', [AdminCapsterController::class, 'editFirst']);
     Route::get('/capsters/{capster}/edit', [AdminCapsterController::class, 'edit'])->name('capsters.edit');
     Route::patch('/capsters/{capster}', [AdminCapsterController::class, 'update'])->name('capsters.update');
+    Route::delete('/capsters/{capster}', [AdminCapsterController::class, 'destroy'])->name('capsters.destroy');
     Route::get('/customers', [AdminCustomerController::class, 'index'])->name('customers.index');
     Route::get('/customers/{user}/promo-whatsapp', [AdminCustomerController::class, 'promoWhatsapp'])->name('customers.promo-whatsapp');
     Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
@@ -75,6 +76,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
     Route::get('/services/{service}/edit', [AdminServiceController::class, 'edit'])->name('services.edit');
     Route::patch('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
+    Route::delete('/services/{service}', [AdminServiceController::class, 'destroy'])->name('services.destroy');
     Route::get('/schedules', [AdminScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/create', [AdminScheduleController::class, 'create'])->name('schedules.create');
     Route::post('/schedules', [AdminScheduleController::class, 'store'])->name('schedules.store');
@@ -82,5 +84,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/schedules/capster/{capster}', [AdminScheduleController::class, 'byCapster'])->name('schedules.by-capster');
     Route::get('/schedules/{schedule}/edit', [AdminScheduleController::class, 'edit'])->name('schedules.edit');
     Route::patch('/schedules/{schedule}', [AdminScheduleController::class, 'update'])->name('schedules.update');
+    Route::delete('/schedules/{schedule}', [AdminScheduleController::class, 'destroy'])->name('schedules.destroy');
     Route::get('/schedules/{schedule}', [AdminScheduleController::class, 'show'])->name('schedules.show');
 });

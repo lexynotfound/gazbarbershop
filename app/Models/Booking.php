@@ -21,7 +21,7 @@ class Booking extends Model
      * @var array<int, string>
      */
     public const CHECK_IN_STATUSES = [
-        'ACCEPTED',
+        'CONFIRMED',
     ];
 
     /**
@@ -44,7 +44,7 @@ class Booking extends Model
      */
     public const LATE_CANCELLABLE_STATUSES = [
         'PENDING',
-        'ACCEPTED',
+        'CONFIRMED',
     ];
 
     protected $fillable = [

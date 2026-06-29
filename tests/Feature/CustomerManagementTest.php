@@ -2,6 +2,7 @@
 
 use App\Models\Booking;
 use App\Models\Capster;
+use App\Models\Payment;
 use App\Models\Service;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,7 +33,7 @@ function customerCapster(array $attributes = []): Capster
 
 function customerBooking(User $user, Service $service, Capster $capster, string $status = 'PENDING'): Booking
 {
-    return Booking::query()->create([
+    $booking = Booking::query()->create([
         'booking_code' => 'GAZ-CUSTOMER-'.fake()->unique()->numerify('######'),
         'user_id' => $user->id,
         'capster_id' => $capster->id,
@@ -43,6 +44,14 @@ function customerBooking(User $user, Service $service, Capster $capster, string 
         'grand_total' => $service->price + $capster->service_fee,
         'status' => $status,
     ]);
+
+    $booking->items()->create([
+        'service_id' => $service->id,
+        'price' => $service->price,
+        'duration_minutes' => $service->duration_minutes,
+    ]);
+
+    return $booking;
 }
 
 test('admin customers page lists only customer users', function () {
@@ -71,7 +80,7 @@ test('admin customers page lists only customer users', function () {
         ->assertSee('rizky@example.com')
         ->assertSee('628123456789')
         ->assertSee('0 booking')
-        ->assertSee('Belum repeat')
+        ->assertSee('Aktif')
         ->assertSee('Dina Pelanggan')
         ->assertDontSee($admin->email);
 });
@@ -85,7 +94,7 @@ test('admin sidebar pelanggan links to customers page', function () {
         ->assertSee(route('admin.customers.index'), false);
 });
 
-test('admin customers page marks repeat customers from completed and reviewed bookings', function () {
+test('admin customers page separates active repeat and loyal customer segments', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $repeatCustomer = User::factory()->create([
         'name' => 'Loyal Customer',
@@ -112,15 +121,15 @@ test('admin customers page marks repeat customers from completed and reviewed bo
         ->assertSuccessful()
         ->assertSee('Loyal Customer')
         ->assertSee('3 booking')
-        ->assertSee('Repeat')
-        ->assertSee('Kirim Promo')
+        ->assertSee('Loyal')
+        ->assertSee('Promo Personal')
         ->assertSee(route('admin.customers.promo-whatsapp', $repeatCustomer), false)
         ->assertSee('Regular Customer')
         ->assertSee('1 booking')
         ->assertSee('Belum memenuhi syarat');
 });
 
-test('admin can open whatsapp promo for repeat customer', function () {
+test('admin can open personalized whatsapp promo for loyal customer', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create([
         'name' => 'Rizky Loyal',
@@ -130,14 +139,26 @@ test('admin can open whatsapp promo for repeat customer', function () {
     $service = customerService();
     $capster = customerCapster();
 
+    $paidBooking = customerBooking($customer, $service, $capster, 'COMPLETED');
     customerBooking($customer, $service, $capster, 'COMPLETED');
     customerBooking($customer, $service, $capster, 'COMPLETED');
-    customerBooking($customer, $service, $capster, 'COMPLETED');
+    Payment::query()->create([
+        'booking_id' => $paidBooking->id,
+        'amount' => $paidBooking->grand_total,
+        'method' => 'cash',
+        'status' => 'paid',
+        'paid_at' => now(),
+    ]);
 
     $message = implode("\n", [
         'Halo Rizky Loyal, terima kasih sudah sering booking di GAZ Barbershop.',
         '',
-        'Sebagai pelanggan loyal, kami punya promo spesial untuk kunjungan berikutnya.',
+        'Kamu sudah menyelesaikan 3 kunjungan dan masuk segmen pelanggan loyal.',
+        'Layanan favoritmu: Cukur Rambut.',
+        'Capster favoritmu: Rudi.',
+        'Total transaksi lunas: Rp90.000.',
+        '',
+        'Kami punya promo personal untuk kunjungan berikutnya.',
         'Silakan booking kembali dan tunjukkan pesan ini saat datang.',
         '',
         'Terima kasih.',
@@ -166,7 +187,11 @@ test('admin promo whatsapp normalizes local customer phone number', function () 
     $message = implode("\n", [
         'Halo Dina Loyal, terima kasih sudah sering booking di GAZ Barbershop.',
         '',
-        'Sebagai pelanggan loyal, kami punya promo spesial untuk kunjungan berikutnya.',
+        'Kamu sudah menyelesaikan 3 kunjungan dan masuk segmen pelanggan loyal.',
+        'Layanan favoritmu: Cukur Rambut.',
+        'Capster favoritmu: Rudi.',
+        '',
+        'Kami punya promo personal untuk kunjungan berikutnya.',
         'Silakan booking kembali dan tunjukkan pesan ini saat datang.',
         '',
         'Terima kasih.',
@@ -178,7 +203,7 @@ test('admin promo whatsapp normalizes local customer phone number', function () 
         ->assertRedirect('https://wa.me/628123456789?text='.urlencode($message));
 });
 
-test('admin cannot send promo whatsapp to non repeat customer', function () {
+test('admin cannot send promo whatsapp to non loyal customer', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $customer = User::factory()->create([
         'name' => 'Rizky Baru',
@@ -194,5 +219,5 @@ test('admin cannot send promo whatsapp to non repeat customer', function () {
     $this->actingAs($admin)
         ->get(route('admin.customers.promo-whatsapp', $customer))
         ->assertRedirect(route('admin.customers.index'))
-        ->assertSessionHas('status', 'Promo hanya tersedia untuk pelanggan repeat order.');
+        ->assertSessionHas('status', 'Promo personal hanya tersedia untuk pelanggan loyal.');
 });
