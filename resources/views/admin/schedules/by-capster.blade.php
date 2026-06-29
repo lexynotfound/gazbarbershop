@@ -9,7 +9,7 @@
                 <h2 class="text-2xl font-black">Jadwal {{ $capster->name }}</h2>
                 <p class="mt-2 text-sm text-gaz-muted">{{ $schedules->count() }} jadwal terdaftar.</p>
             </div>
-            <x-primary-button href="{{ route('admin.schedules.create') }}">Tambah Jadwal</x-primary-button>
+            <x-primary-button href="{{ route('admin.schedules.create', ['capster' => $capster->id]) }}">Tambah Jadwal</x-primary-button>
         </div>
 
         <div class="mt-5 grid gap-3">

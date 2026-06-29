@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Admin\ScheduleController as AdminScheduleController;
 use App\Http\Controllers\Admin\ServiceController as AdminServiceController;
+use App\Http\Controllers\Admin\SettingController as AdminSettingController;
 use App\Http\Controllers\Admin\TransactionController as AdminTransactionController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
@@ -67,6 +68,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::get('/customers/{user}/promo-whatsapp', [AdminCustomerController::class, 'promoWhatsapp'])->name('customers.promo-whatsapp');
     Route::get('/reviews', [AdminReviewController::class, 'index'])->name('reviews.index');
     Route::get('/reviews/{review}', [AdminReviewController::class, 'show'])->name('reviews.show');
+    Route::get('/settings', [AdminSettingController::class, 'edit'])->name('settings.edit');
+    Route::patch('/settings', [AdminSettingController::class, 'update'])->name('settings.update');
     Route::get('/services', [AdminServiceController::class, 'index'])->name('services.index');
     Route::get('/services/create', [AdminServiceController::class, 'create'])->name('services.create');
     Route::post('/services', [AdminServiceController::class, 'store'])->name('services.store');
@@ -74,8 +77,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::patch('/services/{service}', [AdminServiceController::class, 'update'])->name('services.update');
     Route::get('/schedules', [AdminScheduleController::class, 'index'])->name('schedules.index');
     Route::get('/schedules/create', [AdminScheduleController::class, 'create'])->name('schedules.create');
+    Route::post('/schedules', [AdminScheduleController::class, 'store'])->name('schedules.store');
     Route::get('/schedules/edit', [AdminScheduleController::class, 'editFirst']);
     Route::get('/schedules/capster/{capster}', [AdminScheduleController::class, 'byCapster'])->name('schedules.by-capster');
     Route::get('/schedules/{schedule}/edit', [AdminScheduleController::class, 'edit'])->name('schedules.edit');
+    Route::patch('/schedules/{schedule}', [AdminScheduleController::class, 'update'])->name('schedules.update');
     Route::get('/schedules/{schedule}', [AdminScheduleController::class, 'show'])->name('schedules.show');
 });
