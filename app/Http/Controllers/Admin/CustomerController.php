@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\User;
 use App\Services\PhoneNumberFormatter;
 use Illuminate\Http\RedirectResponse;
@@ -17,7 +18,7 @@ class CustomerController extends Controller
         $customers = User::query()
             ->where('role', 'user')
             ->withCount([
-                'bookings as completed_bookings_count' => fn ($query) => $query->where('status', 'COMPLETED'),
+                'bookings as completed_bookings_count' => fn ($query) => $query->whereIn('status', Booking::FINISHED_STATUSES),
             ])
             ->orderByDesc('completed_bookings_count')
             ->orderBy('name')
@@ -32,7 +33,7 @@ class CustomerController extends Controller
     public function promoWhatsapp(User $user): RedirectResponse
     {
         $completedBookingsCount = $user->bookings()
-            ->where('status', 'COMPLETED')
+            ->whereIn('status', Booking::FINISHED_STATUSES)
             ->count();
 
         if ($user->role !== 'user' || $completedBookingsCount < self::RepeatOrderThreshold) {
