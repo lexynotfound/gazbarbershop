@@ -8,7 +8,7 @@
         ['Pelanggan', 'admin.customers.index', 'P'],
         ['Transaksi', 'admin.transactions.index', 'Rp'],
         ['Review', 'admin.reviews.index', 'R'],
-        ['Pengaturan', 'admin.dashboard', 'S'],
+        ['Pengaturan', 'admin.settings.edit', 'S'],
     ];
 @endphp
 

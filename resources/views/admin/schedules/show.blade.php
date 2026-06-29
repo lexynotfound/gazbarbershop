@@ -8,6 +8,10 @@
     ]" />
 
     <section class="rounded-2xl border border-gaz-border bg-gaz-card p-6">
+        @if (session('status'))
+            <div class="mb-6 rounded-xl border border-gaz-gold/30 bg-gaz-gold/10 p-4 text-sm font-bold text-gaz-gold">{{ session('status') }}</div>
+        @endif
+
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <p class="text-sm font-bold text-gaz-gold">Detail Jadwal Capster</p>

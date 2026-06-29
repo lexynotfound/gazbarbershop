@@ -85,7 +85,7 @@ test('admin sidebar pelanggan links to customers page', function () {
         ->assertSee(route('admin.customers.index'), false);
 });
 
-test('admin customers page marks repeat customers from completed bookings only', function () {
+test('admin customers page marks repeat customers from completed and reviewed bookings', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $repeatCustomer = User::factory()->create([
         'name' => 'Loyal Customer',
@@ -100,7 +100,7 @@ test('admin customers page marks repeat customers from completed bookings only',
     $service = customerService();
     $capster = customerCapster();
 
-    customerBooking($repeatCustomer, $service, $capster, 'COMPLETED');
+    customerBooking($repeatCustomer, $service, $capster, 'REVIEWED');
     customerBooking($repeatCustomer, $service, $capster, 'COMPLETED');
     customerBooking($repeatCustomer, $service, $capster, 'COMPLETED');
     customerBooking($regularCustomer, $service, $capster, 'COMPLETED');

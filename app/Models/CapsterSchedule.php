@@ -7,6 +7,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CapsterSchedule extends Model
 {
+    public const OPERATING_START = '10:00';
+
+    public const OPERATING_END = '22:00';
+
     protected $fillable = [
         'capster_id',
         'work_date',

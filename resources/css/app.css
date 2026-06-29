@@ -22,3 +22,7 @@ html {
 [x-cloak] {
     display: none !important;
 }
+
+.crm-progress {
+    accent-color: var(--color-gaz-gold);
+}

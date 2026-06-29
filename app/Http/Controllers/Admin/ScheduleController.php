@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\SaveCapsterScheduleRequest;
 use App\Models\Capster;
 use App\Models\CapsterSchedule;
 use App\Services\BookingAvailability;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class ScheduleController extends Controller
@@ -32,14 +34,33 @@ class ScheduleController extends Controller
         return view('admin.schedules.by-capster', compact('capster', 'schedules'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $capsters = Capster::query()
             ->where('is_active', true)
             ->orderBy('name')
             ->get();
+        $selectedCapsterId = $request->integer('capster');
 
-        return view('admin.schedules.create', compact('capsters'));
+        if (! $capsters->contains('id', $selectedCapsterId)) {
+            $selectedCapsterId = null;
+        }
+
+        return view('admin.schedules.create', [
+            'capsters' => $capsters,
+            'selectedCapsterId' => $selectedCapsterId,
+            'operatingStart' => CapsterSchedule::OPERATING_START,
+            'operatingEnd' => CapsterSchedule::OPERATING_END,
+        ]);
+    }
+
+    public function store(SaveCapsterScheduleRequest $request): RedirectResponse
+    {
+        $schedule = CapsterSchedule::query()->create($request->validated());
+
+        return redirect()
+            ->route('admin.schedules.show', $schedule)
+            ->with('status', 'Jadwal capster berhasil ditambahkan.');
     }
 
     public function editFirst(): RedirectResponse
@@ -75,6 +96,21 @@ class ScheduleController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.schedules.edit', compact('schedule', 'capsters'));
+        return view('admin.schedules.edit', [
+            'schedule' => $schedule,
+            'capsters' => $capsters,
+            'selectedCapsterId' => $schedule->capster_id,
+            'operatingStart' => CapsterSchedule::OPERATING_START,
+            'operatingEnd' => CapsterSchedule::OPERATING_END,
+        ]);
+    }
+
+    public function update(SaveCapsterScheduleRequest $request, CapsterSchedule $schedule): RedirectResponse
+    {
+        $schedule->update($request->validated());
+
+        return redirect()
+            ->route('admin.schedules.show', $schedule)
+            ->with('status', 'Jadwal capster berhasil diperbarui.');
     }
 }

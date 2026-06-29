@@ -67,7 +67,7 @@ class DatabaseSeeder extends Seeder
             foreach (range(0, 6) as $dayOffset) {
                 CapsterSchedule::query()->updateOrCreate(
                     ['capster_id' => $capster->id, 'work_date' => now()->addDays($dayOffset)->toDateString()],
-                    ['start_time' => '08:00:00', 'end_time' => '18:00:00', 'is_available' => true],
+                    ['start_time' => '10:00:00', 'end_time' => '22:00:00', 'is_available' => true],
                 );
             }
         });

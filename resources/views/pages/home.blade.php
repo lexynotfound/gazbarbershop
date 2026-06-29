@@ -12,14 +12,17 @@
                 <x-secondary-button href="{{ route('services') }}">Lihat Layanan</x-secondary-button>
             </div>
         </div>
-        <div class="relative min-h-[360px] overflow-hidden rounded-[2rem] border border-gaz-border bg-gaz-card shadow-2xl">
-            <div class="absolute inset-0 bg-[linear-gradient(135deg,rgba(214,168,79,.22),transparent_45%),radial-gradient(circle_at_70%_30%,rgba(255,255,255,.12),transparent_22%)]"></div>
-            <div class="absolute bottom-0 right-6 h-80 w-56 rounded-t-[6rem] bg-gradient-to-b from-neutral-800 to-black shadow-2xl"></div>
-            <div class="absolute bottom-0 left-10 h-52 w-44 rounded-t-[5rem] bg-gradient-to-b from-gaz-gold/70 to-neutral-950"></div>
-            <div class="absolute left-8 top-8 rounded-2xl border border-white/10 bg-black/45 p-4 backdrop-blur">
-                <p class="text-3xl font-black text-white">4.9</p>
-                <p class="text-sm text-gaz-muted">Rating capster</p>
-            </div>
+        <div class="relative min-h-[360px] overflow-hidden rounded-[2rem] border border-gaz-border bg-gaz-card shadow-2xl lg:-mr-8 lg:min-h-[480px] lg:rounded-none lg:border-0">
+            <img
+                src="{{ asset('images/hero-barbershop.png') }}"
+                alt="Capster GAZ Barbershop sedang menata rambut pelanggan"
+                class="absolute inset-0 size-full object-cover object-[72%_center]"
+                width="1829"
+                height="860"
+                fetchpriority="high"
+            >
+            <div class="absolute inset-0 bg-gradient-to-r from-gaz-black via-gaz-black/15 to-transparent"></div>
+            <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-gaz-black/70 to-transparent"></div>
         </div>
     </div>
 </section>

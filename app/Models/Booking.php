@@ -12,6 +12,14 @@ class Booking extends Model
     /**
      * @var array<int, string>
      */
+    public const FINISHED_STATUSES = [
+        'COMPLETED',
+        'REVIEWED',
+    ];
+
+    /**
+     * @var array<int, string>
+     */
     public const CHECK_IN_STATUSES = [
         'ACCEPTED',
     ];
