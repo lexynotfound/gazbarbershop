@@ -80,6 +80,12 @@ class CapsterController extends Controller
 
     public function destroy(Capster $capster): RedirectResponse
     {
+        if ($capster->bookings()->exists()) {
+            return redirect()
+                ->route('admin.capsters.index')
+                ->with('error', 'Capster tidak dapat dihapus karena memiliki riwayat booking. Nonaktifkan capster sebagai gantinya.');
+        }
+
         if ($capster->photo) {
             Storage::disk('public')->delete($capster->photo);
         }
