@@ -50,7 +50,11 @@ Slot diperiksa berdasarkan overlap `booking_start < slot_end` dan `booking_end >
 
 Laravel Scheduler menjalankan `app:cancel-late-bookings` setiap menit dengan `withoutOverlapping()`. Proses lokal lengkap dijalankan melalui `composer run dev`, yang menyalakan server, queue worker, scheduler, dan Vite.
 
-Setelah auto-cancel, `BookingCancelledNotification` dikirim melalui kanal mail dan database. Tabel `notifications` menyimpan ID booking, kode booking, judul, pesan, alasan, jadwal sebelumnya, action URL, waktu dibuat, serta waktu dibaca. User dapat melihatnya pada Dashboard User dan memilih Booking Ulang.
+Command ini menangani **dua skenario pembatalan** sekaligus:
+- `AUTO_CANCELLED` — booking berstatus `WAITING_CUSTOMER_CONFIRMATION` yang melewati `customer_response_deadline` (tidak ada balasan konfirmasi dalam 15 menit setelah admin kirim WhatsApp).
+- `LATE_CANCELLED` — booking yang sudah `CONFIRMED` atau `CHECKED_IN` tetapi customer tidak hadir 15 menit setelah `booking_start`.
+
+Setelah dibatalkan, `BookingCancelledNotification` dikirim melalui kanal mail dan database. Tabel `notifications` menyimpan ID booking, kode booking, judul, pesan, alasan (`NO_CONFIRMATION` atau `LATE_ARRIVAL`), jadwal sebelumnya, action URL, waktu dibuat, serta waktu dibaca. User dapat melihatnya pada Dashboard User dan memilih Booking Ulang.
 
 ## 9. WhatsApp Manual dan Otomatis
 
