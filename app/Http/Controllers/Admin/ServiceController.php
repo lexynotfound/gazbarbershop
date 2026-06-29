@@ -67,6 +67,12 @@ class ServiceController extends Controller
 
     public function destroy(Service $service): RedirectResponse
     {
+        if ($service->bookingItems()->exists()) {
+            return redirect()
+                ->route('admin.services.index')
+                ->with('error', 'Layanan tidak dapat dihapus karena memiliki riwayat transaksi. Nonaktifkan layanan sebagai gantinya.');
+        }
+
         if ($service->image) {
             Storage::disk('public')->delete($service->image);
         }

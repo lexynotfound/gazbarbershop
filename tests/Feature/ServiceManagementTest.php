@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Capster;
 use App\Models\Service;
 use App\Models\User;
@@ -214,6 +215,48 @@ test('services index shows delete button for each service', function () {
         ->get(route('admin.services.index'))
         ->assertSuccessful()
         ->assertSee(route('admin.services.destroy', $service), false);
+});
+
+test('admin cannot delete a service that has booking history', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $customer = User::factory()->create(['role' => 'user']);
+    $capster = Capster::query()->create([
+        'name' => 'Rudi',
+        'rating' => 4.9,
+        'service_fee' => 50000,
+        'is_active' => true,
+        'description' => 'Capster pengujian.',
+    ]);
+    $service = Service::query()->create([
+        'name' => 'Cukur Rambut',
+        'description' => 'Sudah pernah dipesan.',
+        'price' => 40000,
+        'duration_minutes' => 30,
+        'is_active' => true,
+    ]);
+    $booking = Booking::query()->create([
+        'booking_code' => 'GAZ-SVC-DEL',
+        'user_id' => $customer->id,
+        'capster_id' => $capster->id,
+        'booking_start' => now()->addDay(),
+        'booking_end' => now()->addDay()->addHour(),
+        'service_total' => $service->price,
+        'capster_fee' => $capster->service_fee,
+        'grand_total' => $service->price + $capster->service_fee,
+        'status' => 'COMPLETED',
+    ]);
+    $booking->items()->create([
+        'service_id' => $service->id,
+        'price' => $service->price,
+        'duration_minutes' => $service->duration_minutes,
+    ]);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.services.destroy', $service))
+        ->assertRedirect(route('admin.services.index'))
+        ->assertSessionHas('error');
+
+    $this->assertDatabaseHas('services', ['id' => $service->id]);
 });
 
 test('regular users cannot delete services', function () {
