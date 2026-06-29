@@ -18,16 +18,13 @@
         <table class="w-full min-w-[980px] text-left text-sm">
             <thead class="text-gaz-muted">
                 <tr>
-                    @foreach (['Nama', 'Email', 'No. HP', 'Booking Selesai', 'Repeat Order', 'Bergabung', 'Aksi'] as $head)
+                    @foreach (['Nama', 'Email', 'No. HP', 'Booking Selesai', 'Segmen CRM', 'Bergabung', 'Aksi'] as $head)
                         <th class="border-b border-gaz-border px-4 py-3">{{ $head }}</th>
                     @endforeach
                 </tr>
             </thead>
             <tbody class="divide-y divide-gaz-border">
                 @forelse ($customers as $customer)
-                    @php
-                        $isRepeatCustomer = $customer->completed_bookings_count >= $repeatOrderThreshold;
-                    @endphp
                     <tr class="hover:bg-white/[0.03]">
                         <td class="px-4 py-4">
                             <div class="flex items-center gap-3">
@@ -39,17 +36,13 @@
                         <td class="px-4 py-4">{{ $customer->phone ?: '-' }}</td>
                         <td class="px-4 py-4">{{ $customer->completed_bookings_count }} booking</td>
                         <td class="px-4 py-4">
-                            @if ($isRepeatCustomer)
-                                <span class="inline-flex rounded-full border border-gaz-gold/30 bg-gaz-gold/10 px-3 py-1 text-xs font-bold text-gaz-gold">Repeat</span>
-                            @else
-                                <span class="text-gaz-muted">Belum repeat</span>
-                            @endif
+                            <span class="inline-flex rounded-full border px-3 py-1 text-xs font-bold {{ $customer->crm_segment === 'Loyal' ? 'border-gaz-gold/30 bg-gaz-gold/10 text-gaz-gold' : ($customer->crm_segment === 'Repeat' ? 'border-blue-400/30 bg-blue-400/10 text-blue-200' : 'border-white/15 bg-white/5 text-white') }}">{{ $customer->crm_segment }}</span>
                         </td>
                         <td class="px-4 py-4">{{ $customer->created_at?->translatedFormat('d F Y') ?: '-' }}</td>
                         <td class="px-4 py-4">
-                            @if ($isRepeatCustomer && $customer->phone)
-                                <x-primary-button href="{{ route('admin.customers.promo-whatsapp', $customer) }}" target="_blank">Kirim Promo</x-primary-button>
-                            @elseif ($isRepeatCustomer)
+                            @if ($customer->crm_segment === 'Loyal' && $customer->phone)
+                                <x-primary-button href="{{ route('admin.customers.promo-whatsapp', $customer) }}" target="_blank">Promo Personal</x-primary-button>
+                            @elseif ($customer->crm_segment === 'Loyal')
                                 <span class="text-xs text-gaz-muted">No. HP belum ada</span>
                             @else
                                 <span class="text-xs text-gaz-muted">Belum memenuhi syarat</span>

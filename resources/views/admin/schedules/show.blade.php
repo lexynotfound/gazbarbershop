@@ -21,6 +21,12 @@
             <div class="flex flex-wrap gap-2">
                 <x-secondary-button href="{{ route('admin.schedules.index') }}">Kembali</x-secondary-button>
                 <x-primary-button href="{{ route('admin.schedules.edit', $schedule) }}">Edit Jadwal</x-primary-button>
+                <form method="POST" action="{{ route('admin.schedules.destroy', $schedule) }}"
+                      onsubmit="return confirm('Hapus jadwal ini?')">
+                    @csrf
+                    @method('DELETE')
+                    <x-danger-button type="submit">Hapus Jadwal</x-danger-button>
+                </form>
             </div>
         </div>
 

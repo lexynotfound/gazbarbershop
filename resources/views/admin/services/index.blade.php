@@ -40,6 +40,12 @@
                         <td class="px-4 py-4">
                             <div class="flex flex-wrap gap-2">
                                 <x-secondary-button href="{{ route('admin.services.edit', $service) }}">Edit</x-secondary-button>
+                                <form method="POST" action="{{ route('admin.services.destroy', $service) }}"
+                                      onsubmit="return confirm('Hapus layanan {{ $service->name }}?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <x-danger-button type="submit">Hapus</x-danger-button>
+                                </form>
                             </div>
                         </td>
                     </tr>

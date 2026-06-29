@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Capster;
+use App\Models\CapsterSchedule;
 use App\Models\Payment;
 use App\Models\Service;
 use App\Services\BookingAvailability;
@@ -15,10 +16,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function __construct(private BookingAvailability $availability) {}
+
     public function create(): View|RedirectResponse
     {
         if (Auth::user()?->role === 'admin') {
@@ -52,7 +56,7 @@ class BookingController extends Controller
         ]);
     }
 
-    public function availableTimes(Request $request, BookingAvailability $availability): JsonResponse
+    public function availableTimes(Request $request): JsonResponse
     {
         $data = $request->validate([
             'capster_id' => ['required', 'integer'],
@@ -61,7 +65,7 @@ class BookingController extends Controller
         ]);
 
         return response()->json([
-            'slots' => $availability->slotsForCapsterDate(
+            'slots' => $this->availability->slotsForCapsterDate(
                 (int) $data['capster_id'],
                 $data['booking_date'],
                 (int) $data['duration_minutes'],
@@ -126,6 +130,23 @@ class BookingController extends Controller
             $bookingEnd = $bookingStart->addMinutes($durationMinutes);
             $serviceTotal = (int) $services->sum('price');
             $capsterFee = (int) $capster->service_fee;
+
+            CapsterSchedule::query()
+                ->where('capster_id', $capster->id)
+                ->whereDate('work_date', $bookingData['booking_date'])
+                ->lockForUpdate()
+                ->get();
+
+            if (! $this->availability->isAvailable(
+                $capster->id,
+                $bookingData['booking_date'],
+                $bookingData['booking_time'],
+                $durationMinutes,
+            )) {
+                throw ValidationException::withMessages([
+                    'booking_time' => 'Jadwal capster baru saja terisi. Silakan pilih jam lain.',
+                ]);
+            }
 
             $booking = Booking::query()->create([
                 'booking_code' => $this->nextBookingCode(),

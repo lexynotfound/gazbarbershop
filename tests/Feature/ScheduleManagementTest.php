@@ -229,6 +229,53 @@ test('a capster can only have one schedule per date', function () {
     expect(CapsterSchedule::query()->count())->toBe(1);
 });
 
+test('admin can delete a capster schedule', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $capster = scheduleCapster('Rudi');
+    $schedule = capsterSchedule($capster);
+
+    $this->actingAs($admin)
+        ->delete(route('admin.schedules.destroy', $schedule))
+        ->assertRedirect(route('admin.schedules.by-capster', $capster->id))
+        ->assertSessionHas('status', 'Jadwal capster berhasil dihapus.');
+
+    $this->assertDatabaseMissing('capster_schedules', ['id' => $schedule->id]);
+});
+
+test('by-capster page shows delete button for each schedule', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $capster = scheduleCapster('Rudi');
+    $schedule = capsterSchedule($capster);
+
+    $this->actingAs($admin)
+        ->get(route('admin.schedules.by-capster', $capster))
+        ->assertSuccessful()
+        ->assertSee(route('admin.schedules.destroy', $schedule), false);
+});
+
+test('schedule show page has delete button', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+    $capster = scheduleCapster('Rudi');
+    $schedule = capsterSchedule($capster);
+
+    $this->actingAs($admin)
+        ->get(route('admin.schedules.show', $schedule))
+        ->assertSuccessful()
+        ->assertSee(route('admin.schedules.destroy', $schedule), false);
+});
+
+test('regular users cannot delete capster schedules', function () {
+    $user = User::factory()->create(['role' => 'user']);
+    $capster = scheduleCapster('Rudi');
+    $schedule = capsterSchedule($capster);
+
+    $this->actingAs($user)
+        ->delete(route('admin.schedules.destroy', $schedule))
+        ->assertForbidden();
+
+    $this->assertDatabaseHas('capster_schedules', ['id' => $schedule->id]);
+});
+
 test('regular users cannot add or edit capster schedules', function () {
     $user = User::factory()->create(['role' => 'user']);
     $capster = scheduleCapster('Rudi');

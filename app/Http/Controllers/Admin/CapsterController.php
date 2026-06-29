@@ -77,4 +77,17 @@ class CapsterController extends Controller
             ->route('admin.capsters.index')
             ->with('status', 'Capster berhasil diperbarui.');
     }
+
+    public function destroy(Capster $capster): RedirectResponse
+    {
+        if ($capster->photo) {
+            Storage::disk('public')->delete($capster->photo);
+        }
+
+        $capster->delete();
+
+        return redirect()
+            ->route('admin.capsters.index')
+            ->with('status', 'Capster berhasil dihapus.');
+    }
 }
