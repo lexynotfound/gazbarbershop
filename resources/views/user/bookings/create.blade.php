@@ -22,6 +22,12 @@
     capsterFee() { const capster = this.capsters.find(item => item.id === this.selectedCapster); return capster ? capster.service_fee : 0 },
     grandTotal() { return this.serviceTotal() + this.capsterFee() },
     canNext() { return (this.step === 1 && this.selectedServices.length) || (this.step === 2 && this.selectedCapster) || (this.step === 3 && this.selectedDate && this.selectedTime) || this.step === 4 },
+    maxReachableStep() {
+        if (!this.selectedServices.length) return 1;
+        if (!this.selectedCapster) return 2;
+        if (!this.selectedDate || !this.selectedTime) return 3;
+        return 4;
+    },
     canSubmit() { return this.selectedServices.length && this.selectedCapster && this.selectedDate && this.selectedTime },
     async loadSlots() {
         this.slots = [];
@@ -60,7 +66,7 @@
 
         <div class="flex flex-wrap items-center gap-2">
             <template x-for="number in [1,2,3,4]" :key="number">
-                <button type="button" @click="step = number" class="rounded-full border px-4 py-2 text-sm font-bold" :class="step === number ? 'border-gaz-gold bg-gaz-gold text-black' : 'border-gaz-border text-gaz-muted'">Step <span x-text="number"></span></button>
+                <button type="button" @click="if (number <= maxReachableStep()) step = number" :disabled="number > maxReachableStep()" class="rounded-full border px-4 py-2 text-sm font-bold disabled:cursor-not-allowed disabled:opacity-40" :class="step === number ? 'border-gaz-gold bg-gaz-gold text-black' : 'border-gaz-border text-gaz-muted'">Step <span x-text="number"></span></button>
             </template>
         </div>
 
