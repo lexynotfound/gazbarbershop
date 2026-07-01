@@ -12,7 +12,7 @@
     loadingSlots: false,
     selectedServices: @js($initialServiceId ? [$initialServiceId] : []),
     selectedCapster: null,
-    selectedDate: new Date().toISOString().slice(0, 10),
+    selectedDate: (() => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') })(),
     selectedTime: null,
     money(value) { return new Intl.NumberFormat('id-ID').format(value || 0) },
     init() { this.$watch('selectedServices', () => this.loadSlots()); this.$watch('selectedCapster', () => this.loadSlots()); this.$watch('selectedDate', () => this.loadSlots()) },
