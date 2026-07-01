@@ -40,7 +40,7 @@ class BookingAvailability
     /**
      * @return array<int, array{time: string, label: string, available: bool, status: string, booking_code: ?string, customer_name: ?string}>
      */
-    public function slotsForCapsterDate(int $capsterId, string $date, int $durationMinutes): array
+    public function slotsForCapsterDate(int $capsterId, string $date, int $durationMinutes, ?int $excludeBookingId = null): array
     {
         $schedules = CapsterSchedule::query()
             ->where('capster_id', $capsterId)
@@ -54,7 +54,7 @@ class BookingAvailability
 
         $dayStart = CarbonImmutable::createFromFormat('Y-m-d H:i:s', $date.' 00:00:00');
         $dayEnd = $dayStart->addDay();
-        $bookings = $this->blockingBookings($capsterId, $dayStart, $dayEnd);
+        $bookings = $this->blockingBookings($capsterId, $dayStart, $dayEnd, $excludeBookingId);
 
         return $schedules
             ->flatMap(fn (CapsterSchedule $schedule): array => $this->buildSlots(
@@ -68,9 +68,9 @@ class BookingAvailability
             ->all();
     }
 
-    public function isAvailable(int $capsterId, string $date, string $time, int $durationMinutes): bool
+    public function isAvailable(int $capsterId, string $date, string $time, int $durationMinutes, ?int $excludeBookingId = null): bool
     {
-        return collect($this->slotsForCapsterDate($capsterId, $date, $durationMinutes))
+        return collect($this->slotsForCapsterDate($capsterId, $date, $durationMinutes, $excludeBookingId))
             ->contains(fn (array $slot): bool => $slot['time'] === $time && $slot['available']);
     }
 
@@ -89,7 +89,7 @@ class BookingAvailability
     /**
      * @return Collection<int, Booking>
      */
-    private function blockingBookings(int $capsterId, CarbonImmutable $start, CarbonImmutable $end): Collection
+    private function blockingBookings(int $capsterId, CarbonImmutable $start, CarbonImmutable $end, ?int $excludeBookingId = null): Collection
     {
         return Booking::query()
             ->with('user')
@@ -97,6 +97,7 @@ class BookingAvailability
             ->whereIn('status', self::BLOCKING_STATUSES)
             ->where('booking_start', '<', $end)
             ->where('booking_end', '>', $start)
+            ->when($excludeBookingId, fn ($query, $excludeBookingId) => $query->whereKeyNot($excludeBookingId))
             ->orderBy('booking_start')
             ->get();
     }

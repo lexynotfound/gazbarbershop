@@ -3,13 +3,18 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RescheduleBookingRequest;
 use App\Models\Booking;
+use App\Services\BookingReschedule;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
 class BookingController extends Controller
 {
+    public function __construct(private BookingReschedule $bookingReschedule) {}
+
     /**
      * @var array<int, string>
      */
@@ -55,6 +60,32 @@ class BookingController extends Controller
         return view('user.bookings.index', [
             'upcomingBookings' => $this->bookingsForStatuses(self::UPCOMING_STATUSES),
         ]);
+    }
+
+    public function rescheduleForm(Booking $booking): View|RedirectResponse
+    {
+        abort_if($booking->user_id !== Auth::id(), 403);
+
+        if (! in_array($booking->status, Booking::RESCHEDULABLE_STATUSES, true)) {
+            return redirect()
+                ->route('booking.show', $booking)
+                ->with('status', "Booking {$booking->booking_code} tidak bisa dijadwalkan ulang.");
+        }
+
+        $booking->load(['capster', 'items.service']);
+
+        return view('user.bookings.reschedule', compact('booking'));
+    }
+
+    public function reschedule(RescheduleBookingRequest $request, Booking $booking): RedirectResponse
+    {
+        abort_if($booking->user_id !== Auth::id(), 403);
+
+        $this->bookingReschedule->reschedule($booking, $request->validated('booking_date'), $request->validated('booking_time'));
+
+        return redirect()
+            ->route('booking.show', $booking)
+            ->with('status', "Booking {$booking->booking_code} berhasil dijadwalkan ulang.");
     }
 
     public function history(): View

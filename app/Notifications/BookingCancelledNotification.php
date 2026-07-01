@@ -41,7 +41,7 @@ class BookingCancelledNotification extends Notification implements ShouldQueue
             ->line($this->message())
             ->line('Jadwal sebelumnya: '.$this->booking->booking_start->translatedFormat('d F Y, H:i'))
             ->line('Capster: '.$this->booking->capster->name)
-            ->action('Booking Ulang', route('booking.create'))
+            ->action('Reschedule Booking', route('booking.reschedule.form', $this->booking))
             ->line('Silakan pilih jadwal baru yang masih tersedia.');
     }
 
@@ -59,7 +59,8 @@ class BookingCancelledNotification extends Notification implements ShouldQueue
             'message' => $this->message(),
             'reason' => $this->reason,
             'previous_schedule' => $this->booking->booking_start->toIso8601String(),
-            'action_url' => route('booking.create'),
+            'action_label' => 'Reschedule Booking',
+            'action_url' => route('booking.reschedule.form', $this->booking),
         ];
     }
 

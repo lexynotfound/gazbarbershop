@@ -25,8 +25,11 @@
             </div>
         @endforeach
     </dl>
-    <div class="mt-6">
+    <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
         <a href="{{ route('bookings.index') }}" class="text-sm text-gaz-muted hover:text-white">← Kembali ke Booking Saya</a>
+        @if (in_array($booking->status, \App\Models\Booking::RESCHEDULABLE_STATUSES, true))
+            <x-secondary-button href="{{ route('booking.reschedule.form', $booking) }}">Reschedule</x-secondary-button>
+        @endif
     </div>
 </div>
 @endsection

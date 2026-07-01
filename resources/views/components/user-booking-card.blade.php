@@ -15,6 +15,9 @@
     </div>
     <div class="mt-4 flex flex-wrap gap-2">
         <x-secondary-button href="{{ route('booking.show', $booking) }}">Detail</x-secondary-button>
+        @if (in_array($booking->status, \App\Models\Booking::RESCHEDULABLE_STATUSES, true))
+            <x-secondary-button href="{{ route('booking.reschedule.form', $booking) }}">Reschedule</x-secondary-button>
+        @endif
         @if ($booking->status === 'COMPLETED' && ! $booking->review)
             <x-primary-button href="{{ route('booking.review', ['booking' => $booking->id]) }}">Review</x-primary-button>
         @elseif ($booking->status === 'REVIEWED' || $booking->review)

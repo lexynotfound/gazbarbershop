@@ -21,6 +21,9 @@
             <div class="flex flex-wrap gap-2">
                 <x-secondary-button href="{{ route('admin.bookings.index') }}">Kembali</x-secondary-button>
                 <x-primary-button href="{{ route('admin.bookings.whatsapp', $booking) }}">WhatsApp</x-primary-button>
+                @if (in_array($booking->status, \App\Models\Booking::RESCHEDULABLE_STATUSES, true))
+                    <x-secondary-button href="{{ route('admin.bookings.reschedule.form', $booking) }}">Reschedule</x-secondary-button>
+                @endif
                 @if (in_array($booking->status, \App\Models\Booking::ACCEPT_STATUSES, true))
                     <form method="POST" action="{{ route('admin.bookings.accept', $booking) }}">
                         @csrf

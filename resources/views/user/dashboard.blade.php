@@ -27,7 +27,7 @@
                             <p class="mt-2 text-xs text-gaz-muted">{{ $notification->created_at?->diffForHumans() }}</p>
                         </div>
                         @if ($notification->data['action_url'] ?? null)
-                            <x-secondary-button href="{{ $notification->data['action_url'] }}" class="shrink-0">Booking Ulang</x-secondary-button>
+                            <x-secondary-button href="{{ $notification->data['action_url'] }}" class="shrink-0">{{ $notification->data['action_label'] ?? 'Lihat Detail' }}</x-secondary-button>
                         @endif
                     </div>
                 </article>

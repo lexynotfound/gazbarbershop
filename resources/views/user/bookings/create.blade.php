@@ -111,6 +111,38 @@
         <div class="mt-7" x-show="step === 4">
             <h1 class="text-3xl font-black">Ringkasan Booking</h1>
             <p class="mt-3 text-gaz-muted">Periksa kembali pilihanmu sebelum mengirim booking.</p>
+
+            <div class="mt-5 rounded-2xl border border-gaz-border bg-black/20 p-5">
+                <p class="text-sm font-bold text-gaz-muted">Layanan</p>
+                <div class="mt-3 grid gap-2">
+                    <template x-for="service in services.filter(service => selectedServices.includes(service.id))" :key="service.id">
+                        <div class="flex justify-between gap-4 text-sm">
+                            <span x-text="service.name"></span>
+                            <span class="font-bold">Rp<span x-text="money(service.price)"></span></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-5 border-t border-gaz-border pt-4">
+                    <p class="text-sm font-bold text-gaz-muted">Capster</p>
+                    <template x-for="capster in capsters.filter(capster => capster.id === selectedCapster)" :key="capster.id">
+                        <div class="mt-2 flex justify-between gap-4 text-sm">
+                            <span x-text="capster.name"></span>
+                            <span class="font-bold">Rp<span x-text="money(capster.service_fee)"></span></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-5 border-t border-gaz-border pt-4">
+                    <p class="text-sm font-bold text-gaz-muted">Jadwal</p>
+                    <p class="mt-2 text-sm font-bold" x-text="selectedDate + ' - ' + (selectedTime || 'Pilih jam')"></p>
+                </div>
+
+                <div class="mt-5 flex justify-between gap-4 border-t border-gaz-border pt-4 text-lg font-black text-white">
+                    <span>Total Harga</span>
+                    <span>Rp<span x-text="money(grandTotal())"></span></span>
+                </div>
+            </div>
         </div>
 
         <div class="mt-8 flex justify-between gap-3">

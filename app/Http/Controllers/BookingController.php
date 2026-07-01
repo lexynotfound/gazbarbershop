@@ -62,6 +62,7 @@ class BookingController extends Controller
             'capster_id' => ['required', 'integer'],
             'booking_date' => ['required', 'date'],
             'duration_minutes' => ['required', 'integer', 'min:1'],
+            'exclude_booking_id' => ['nullable', 'integer', 'exists:bookings,id'],
         ]);
 
         return response()->json([
@@ -69,6 +70,7 @@ class BookingController extends Controller
                 (int) $data['capster_id'],
                 $data['booking_date'],
                 (int) $data['duration_minutes'],
+                isset($data['exclude_booking_id']) ? (int) $data['exclude_booking_id'] : null,
             ),
         ]);
     }

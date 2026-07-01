@@ -42,6 +42,8 @@ Route::middleware(['auth', 'user'])->group(function (): void {
     Route::get('/booking/review', [UserReviewController::class, 'index'])->name('booking.review');
     Route::post('/booking/review', [UserReviewController::class, 'store'])->name('booking.review.store');
     Route::get('/booking/{booking}', [UserBookingController::class, 'show'])->name('booking.show');
+    Route::get('/booking/{booking}/reschedule', [UserBookingController::class, 'rescheduleForm'])->name('booking.reschedule.form');
+    Route::patch('/booking/{booking}/reschedule', [UserBookingController::class, 'reschedule'])->name('booking.reschedule');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function (): void {
@@ -56,6 +58,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(fun
     Route::patch('/bookings/{booking}/complete', [AdminBookingController::class, 'complete'])->name('bookings.complete');
     Route::patch('/bookings/{booking}/payment/paid', [AdminBookingController::class, 'markPaid'])->name('bookings.payment.paid');
     Route::patch('/bookings/{booking}/cancel', [AdminBookingController::class, 'cancel'])->name('bookings.cancel');
+    Route::get('/bookings/{booking}/reschedule', [AdminBookingController::class, 'rescheduleForm'])->name('bookings.reschedule.form');
+    Route::patch('/bookings/{booking}/reschedule', [AdminBookingController::class, 'reschedule'])->name('bookings.reschedule');
     Route::get('/transactions', [AdminTransactionController::class, 'index'])->name('transactions.index');
     Route::get('/transactions/export/csv', [AdminTransactionController::class, 'exportCsv'])->name('transactions.export.csv');
     Route::get('/transactions/export/pdf', [AdminTransactionController::class, 'exportPdf'])->name('transactions.export.pdf');

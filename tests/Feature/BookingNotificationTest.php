@@ -99,6 +99,6 @@ test('database cancellation notification is stored and shown on user dashboard',
         ->assertSuccessful()
         ->assertSee('Notifikasi Terbaru')
         ->assertSee('Booking dibatalkan otomatis')
-        ->assertSee('Booking Ulang')
-        ->assertSee(route('booking.create'), false);
+        ->assertSee('Reschedule Booking')
+        ->assertSee(route('booking.reschedule.form', $booking), false);
 });

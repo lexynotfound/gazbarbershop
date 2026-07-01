@@ -47,6 +47,17 @@ class Booking extends Model
         'CONFIRMED',
     ];
 
+    /**
+     * @var array<int, string>
+     */
+    public const RESCHEDULABLE_STATUSES = [
+        'PENDING',
+        'WAITING_CUSTOMER_CONFIRMATION',
+        'CONFIRMED',
+        'AUTO_CANCELLED',
+        'LATE_CANCELLED',
+    ];
+
     protected $fillable = [
         'booking_code',
         'user_id',
